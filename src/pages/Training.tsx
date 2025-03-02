@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder'
 import { voiceSamples } from '../config/voiceSamples'
 import { AudioVisualizer, AudioVisualizerHandle } from '../components/AudioVisualizer'
+import { parseTimestampsCSV, TimeStamp } from '../utils/parseTimestamps'
 
 interface AudioDevice {
   deviceId: string
@@ -15,6 +16,7 @@ export function Training() {
   const [showDeviceSelector, setShowDeviceSelector] = useState(false)
   const [selectedSample, setSelectedSample] = useState(voiceSamples[0])
   const [playbackRate, setPlaybackRate] = useState(1.0)
+  const [timestamps, setTimestamps] = useState<TimeStamp[]>([])
   const [isAudioLoaded, setIsAudioLoaded] = useState(false)
   const [showSpeedControl, setShowSpeedControl] = useState(false)
   const [isTargetPlaying, setIsTargetPlaying] = useState(false)
@@ -60,6 +62,15 @@ export function Training() {
     }
   }, [])
 
+  useEffect(() => {
+    // Load timestamps
+    parseTimestampsCSV('/data/timestamps.csv').then(parsedTimestamps => {
+      setTimestamps(parsedTimestamps);
+    }).catch(error => {
+      console.error('Error loading timestamps:', error);
+    });
+  }, []);
+
   const handlePlayPauseClick = () => {
     visualizerRef.current?.togglePlayback()
   }
@@ -88,6 +99,7 @@ export function Training() {
             playbackRate={playbackRate}
             onPlaybackRateChange={handlePlaybackRateChange}
             onPlayingChange={setIsTargetPlaying}
+            timestamps={timestamps}
           />
           <div className="flex items-center justify-between mt-4">
             <button

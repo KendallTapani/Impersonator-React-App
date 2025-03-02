@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 
+interface TimeStamp {
+  start: number;
+  stop: number;
+  word: string;
+}
+
 interface AudioVisualizerProps {
   audioUrl: string;
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
   onTimeUpdate?: (time: number) => void;
   onPlayingChange?: (isPlaying: boolean) => void;
+  timestamps?: TimeStamp[];
 }
 
 export interface AudioVisualizerHandle {
@@ -21,21 +28,22 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   playbackRate = 1.0,
   onPlaybackRateChange,
   onTimeUpdate,
-  onPlayingChange
+  onPlayingChange,
+  timestamps = []
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [audioContext] = useState(() => new AudioContext())
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
-  const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioSource, setAudioSource] = useState<AudioBufferSourceNode | null>(null)
   const [startTime, setStartTime] = useState<number>(0)
-  const [isLoading, setIsLoading] = useState(false)
   const currentPlaybackRate = useRef(playbackRate)
   const bufferRef = useRef<AudioBuffer | null>(null)
+  const stopTimeoutRef = useRef<number | null>(null)
+  const [hoverTime, setHoverTime] = useState<number | null>(null)
 
   // Update playback rate when prop changes
   useEffect(() => {
@@ -52,9 +60,6 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     async function loadAudio() {
       if (!audioUrl) return
       
-      setIsLoading(true)
-      console.log('Starting audio load:', audioUrl)
-      
       try {
         const response = await fetch(audioUrl)
         if (!isMounted) return
@@ -62,26 +67,16 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         const arrayBuffer = await response.arrayBuffer()
         if (!isMounted) return
         
-        console.log('Audio fetched, decoding...')
         const buffer = await audioContext.decodeAudioData(arrayBuffer)
         if (!isMounted) return
         
-        console.log('Audio decoded, duration:', buffer.duration)
-        
-        // Update both ref and state
         bufferRef.current = buffer
         setAudioBuffer(buffer)
         setDuration(buffer.duration)
         setCurrentTime(0)
-        console.log('States updated, buffer available:', !!bufferRef.current)
       } catch (error) {
         console.error('Error loading audio:', error)
         bufferRef.current = null
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-          console.log('Audio loading complete')
-        }
       }
     }
 
@@ -98,29 +93,32 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       setIsPlaying(false)
       setAudioSource(null)
       setCurrentTime(0)
-      setIsLoading(false)
     }
   }, [audioUrl, audioContext])
 
-  // Handle playback
+  // Update current time during playback
+  useEffect(() => {
+    if (!isPlaying) return
+
+    const interval = setInterval(() => {
+      const newTime = audioContext.currentTime - startTime
+      if (newTime >= duration) {
+        setCurrentTime(duration)
+        setIsPlaying(false)
+        clearInterval(interval)
+      } else {
+        setCurrentTime(newTime)
+      }
+      onTimeUpdate?.(newTime)
+    }, 16)
+
+    return () => clearInterval(interval)
+  }, [isPlaying, startTime, duration, audioContext, onTimeUpdate])
+
   const playAudio = () => {
-    if (isLoading) {
-      console.log('Playback prevented: still loading')
-      return
-    }
-
     const buffer = bufferRef.current
-    if (!buffer) {
-      console.log('Playback prevented: no buffer available')
-      return
-    }
+    if (!buffer || isPlaying) return
 
-    if (isPlaying) {
-      console.log('Playback prevented: already playing')
-      return
-    }
-
-    console.log('Starting playback from:', currentTime, 'buffer:', !!buffer)
     const source = audioContext.createBufferSource()
     source.buffer = buffer
     source.connect(audioContext.destination)
@@ -132,10 +130,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     setStartTime(audioContext.currentTime - currentTime)
 
     source.onended = () => {
-      console.log('Playback ended')
       setIsPlaying(false)
       setAudioSource(null)
-      setCurrentTime(0)
       onPlayingChange?.(false)
     }
 
@@ -163,68 +159,57 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     }
   }
 
-  const togglePlayback = () => {
-    if (isPlaying) {
-      stopAudio()
-    } else {
-      playAudio()
+  const handleTimestampClick = (timestamp: TimeStamp, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    // Clear any existing timeout
+    if (stopTimeoutRef.current) {
+      window.clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
     }
+    
+    // Stop any current playback
+    if (isPlaying) {
+      stopAudio();
+    }
+    
+    // Set the current time and start playback
+    setCurrentTime(timestamp.start);
+    const segmentDuration = (timestamp.stop - timestamp.start) / currentPlaybackRate.current;
+    
+    // Start playback from the timestamp start
+    const source = audioContext.createBufferSource();
+    if (!bufferRef.current) return;
+    
+    source.buffer = bufferRef.current;
+    source.connect(audioContext.destination);
+    source.playbackRate.value = currentPlaybackRate.current;
+    
+    const startTime = audioContext.currentTime;
+    source.start(startTime, timestamp.start);
+    source.stop(startTime + segmentDuration);
+    
+    setAudioSource(source);
+    setIsPlaying(true);
+    setStartTime(startTime - timestamp.start);
+    onPlayingChange?.(true);
+    
+    // Set up onended handler to clean up state
+    source.onended = () => {
+      setIsPlaying(false);
+      setAudioSource(null);
+      onPlayingChange?.(false);
+      setCurrentTime(timestamp.stop);
+    };
   }
 
-  // Expose controls via ref
-  useImperativeHandle(ref, () => ({
-    play: playAudio,
-    pause: stopAudio,
-    seek,
-    setPlaybackRate: (rate: number) => {
-      currentPlaybackRate.current = rate
-      if (audioSource) {
-        audioSource.playbackRate.value = rate
-      }
-      onPlaybackRateChange?.(rate)
-    },
-    togglePlayback
-  }), [isPlaying, currentTime, audioSource])
-
-  // Update current time during playback
   useEffect(() => {
-    if (!isPlaying) return
-
-    const interval = setInterval(() => {
-      const newTime = audioContext.currentTime - startTime
-      if (newTime >= duration) {
-        setCurrentTime(duration)
-        setIsPlaying(false)
-        clearInterval(interval)
-      } else {
-        setCurrentTime(newTime)
+    return () => {
+      if (stopTimeoutRef.current) {
+        window.clearTimeout(stopTimeoutRef.current);
       }
-      onTimeUpdate?.(newTime)
-    }, 16)
-
-    return () => clearInterval(interval)
-  }, [isPlaying, startTime, duration, audioContext, onTimeUpdate])
-
-  // Handle mouse interaction
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const time = (x / rect.width) * duration
-    setHoverTime(time)
-  }
-
-  const handleMouseLeave = () => {
-    setHoverTime(null)
-  }
-
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current || !audioBuffer) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const time = (x / rect.width) * duration
-    seek(time)
-  }
+    };
+  }, []);
 
   // Draw waveform
   useEffect(() => {
@@ -264,33 +249,75 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     ctx.stroke()
   }, [audioBuffer])
 
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || !audioBuffer) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const time = (x / rect.width) * duration
+    seek(time)
+  }
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const time = (x / rect.width) * duration
+    setHoverTime(time)
+  }
+
+  const handleMouseLeave = () => {
+    setHoverTime(null)
+  }
+
+  // Expose controls via ref
+  useImperativeHandle(ref, () => ({
+    play: playAudio,
+    pause: stopAudio,
+    seek,
+    setPlaybackRate: (rate: number) => {
+      currentPlaybackRate.current = rate
+      if (audioSource) {
+        audioSource.playbackRate.value = rate
+      }
+      onPlaybackRateChange?.(rate)
+    },
+    togglePlayback: () => {
+      if (isPlaying) {
+        stopAudio()
+      } else {
+        playAudio()
+      }
+    }
+  }), [isPlaying, currentTime, audioSource])
+
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full h-32 bg-white rounded-lg shadow-sm cursor-pointer"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-    >
-      <canvas 
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-      />
-      
-      <div className="absolute inset-0">
-        {/* Red playhead - always visible */}
+    <div ref={containerRef} className="relative w-full bg-white rounded-lg shadow-sm">
+      {/* Waveform section */}
+      <div 
+        className="relative w-full h-32"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+      >
+        <canvas 
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+        />
+        
+        {/* Red playhead - covers waveform section */}
         <div 
-          className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+          className="absolute top-0 h-32 w-0.5 bg-red-500"
           style={{ 
             left: `${(currentTime / duration) * 100}%`,
             transition: isPlaying ? 'left 0.1s linear' : 'none'
           }}
         />
         
+        {/* Hover time indicator */}
         {hoverTime !== null && (
           <>
             <div 
-              className="absolute top-0 bottom-0 w-0.5 bg-green-500 opacity-50"
+              className="absolute top-0 bottom-0 w-0.5 bg-blue-500 opacity-50"
               style={{ left: `${(hoverTime / duration) * 100}%` }}
             />
             <div 
@@ -302,6 +329,25 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           </>
         )}
       </div>
+      
+      {/* Timestamp boxes section */}
+      {timestamps.length > 0 && (
+        <div className="relative w-full h-12 border-t border-gray-200">
+          {timestamps.map((timestamp, index) => (
+            <div 
+              key={index} 
+              className="absolute h-full bg-blue-100 border border-blue-300 flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
+              style={{ 
+                left: `${(timestamp.start / duration) * 100}%`,
+                width: `${((timestamp.stop - timestamp.start) / duration) * 100}%`,
+              }}
+              onClick={(e) => handleTimestampClick(timestamp, e)}
+            >
+              <span className="text-xs font-medium text-blue-700 select-none">{timestamp.word}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }) 
