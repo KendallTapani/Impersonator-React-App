@@ -6,6 +6,12 @@ interface TimeStamp {
   word: string;
 }
 
+interface SelectionRange {
+  words: TimeStamp[];
+  startTime: number;
+  endTime: number;
+}
+
 interface AudioVisualizerProps {
   audioUrl: string;
   playbackRate?: number;
@@ -13,14 +19,14 @@ interface AudioVisualizerProps {
   onTimeUpdate?: (time: number) => void;
   onPlayingChange?: (isPlaying: boolean) => void;
   timestamps?: TimeStamp[];
+  onSelectionChange?: (selection: SelectionRange | null) => void;
 }
 
 export interface AudioVisualizerHandle {
-  play: () => void;
-  pause: () => void;
   seek: (time: number) => void;
   setPlaybackRate: (rate: number) => void;
   togglePlayback: () => void;
+  clearSelection: () => void;
 }
 
 export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizerProps>(({
@@ -29,7 +35,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   onPlaybackRateChange,
   onTimeUpdate,
   onPlayingChange,
-  timestamps = []
+  timestamps = [],
+  onSelectionChange
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -44,6 +51,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   const bufferRef = useRef<AudioBuffer | null>(null)
   const stopTimeoutRef = useRef<number | null>(null)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
+  const [selectedWords, setSelectedWords] = useState<TimeStamp[]>([])
 
   // Update playback rate when prop changes
   useEffect(() => {
@@ -102,8 +110,12 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
 
     const interval = setInterval(() => {
       const newTime = audioContext.currentTime - startTime
-      if (newTime >= duration) {
-        setCurrentTime(duration)
+      const endTime = selectedWords.length > 0
+        ? Math.max(...selectedWords.map(w => w.stop))
+        : duration;
+      
+      if (newTime >= endTime) {
+        setCurrentTime(endTime)
         setIsPlaying(false)
         clearInterval(interval)
       } else {
@@ -113,7 +125,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     }, 16)
 
     return () => clearInterval(interval)
-  }, [isPlaying, startTime, duration, audioContext, onTimeUpdate])
+  }, [isPlaying, startTime, duration, audioContext, onTimeUpdate, selectedWords])
 
   const playAudio = () => {
     const buffer = bufferRef.current
@@ -124,21 +136,45 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     source.connect(audioContext.destination)
     source.playbackRate.value = currentPlaybackRate.current
     
-    source.start(0, currentTime)
+    // Calculate the correct start and end times
+    const playStartTime = selectedWords.length > 0 
+      ? Math.min(...selectedWords.map(w => w.start))
+      : currentTime;
+    
+    const playEndTime = selectedWords.length > 0
+      ? Math.max(...selectedWords.map(w => w.stop))
+      : buffer.duration;
+    
+    const playDuration = (playEndTime - playStartTime) / playbackRate;
+    
+    // Start the audio from the correct position
+    source.start(0, playStartTime, playDuration);
     setAudioSource(source)
     setIsPlaying(true)
-    setStartTime(audioContext.currentTime - currentTime)
+    setStartTime(audioContext.currentTime - playStartTime)
+    setCurrentTime(playStartTime)
 
     source.onended = () => {
       setIsPlaying(false)
       setAudioSource(null)
+      setCurrentTime(playEndTime)
       onPlayingChange?.(false)
+      
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current)
+        stopTimeoutRef.current = null
+      }
     }
 
     onPlayingChange?.(true)
   }
 
   const stopAudio = () => {
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+    
     if (audioSource) {
       audioSource.stop()
       audioSource.disconnect()
@@ -162,54 +198,52 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   const handleTimestampClick = (timestamp: TimeStamp, event: React.MouseEvent) => {
     event.stopPropagation();
     
-    // Clear any existing timeout
-    if (stopTimeoutRef.current) {
-      window.clearTimeout(stopTimeoutRef.current);
-      stopTimeoutRef.current = null;
-    }
-    
-    // Stop any current playback
-    if (isPlaying) {
-      stopAudio();
-    }
-    
-    // Set the current time and start playback
-    setCurrentTime(timestamp.start);
-    const segmentDuration = (timestamp.stop - timestamp.start) / currentPlaybackRate.current;
-    
-    // Start playback from the timestamp start
-    const source = audioContext.createBufferSource();
-    if (!bufferRef.current) return;
-    
-    source.buffer = bufferRef.current;
-    source.connect(audioContext.destination);
-    source.playbackRate.value = currentPlaybackRate.current;
-    
-    const startTime = audioContext.currentTime;
-    source.start(startTime, timestamp.start);
-    source.stop(startTime + segmentDuration);
-    
-    setAudioSource(source);
-    setIsPlaying(true);
-    setStartTime(startTime - timestamp.start);
-    onPlayingChange?.(true);
-    
-    // Set up onended handler to clean up state
-    source.onended = () => {
-      setIsPlaying(false);
-      setAudioSource(null);
-      onPlayingChange?.(false);
-      setCurrentTime(timestamp.stop);
-    };
+    setSelectedWords(prev => {
+      let newSelection: TimeStamp[];
+      
+      if (event.shiftKey && prev.length > 0) {
+        // If shift is held and we have a previous selection, select range
+        const firstWordIndex = timestamps.findIndex(t => t === prev[0]);
+        const currentWordIndex = timestamps.findIndex(t => t === timestamp);
+        const start = Math.min(firstWordIndex, currentWordIndex);
+        const end = Math.max(firstWordIndex, currentWordIndex);
+        
+        // Get the range of words
+        const rangeSelection = timestamps.slice(start, end + 1);
+        
+        // If all words in range are selected, deselect them
+        const allSelected = rangeSelection.every(word => prev.includes(word));
+        newSelection = allSelected 
+          ? prev.filter(word => !rangeSelection.includes(word))
+          : [...new Set([...prev, ...rangeSelection])];
+      } else {
+        // Toggle single word selection
+        newSelection = prev.includes(timestamp)
+          ? prev.filter(word => word !== timestamp)
+          : [...prev, timestamp];
+      }
+
+      // Calculate time range and notify parent
+      if (newSelection.length > 0) {
+        const startTime = Math.min(...newSelection.map(w => w.start));
+        const endTime = Math.max(...newSelection.map(w => w.stop));
+        onSelectionChange?.({
+          words: newSelection,
+          startTime,
+          endTime
+        });
+      } else {
+        onSelectionChange?.(null);
+      }
+
+      return newSelection;
+    });
   }
 
-  useEffect(() => {
-    return () => {
-      if (stopTimeoutRef.current) {
-        window.clearTimeout(stopTimeoutRef.current);
-      }
-    };
-  }, []);
+  const clearSelection = () => {
+    setSelectedWords([]);
+    onSelectionChange?.(null);
+  }
 
   // Draw waveform
   useEffect(() => {
@@ -271,8 +305,6 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
 
   // Expose controls via ref
   useImperativeHandle(ref, () => ({
-    play: playAudio,
-    pause: stopAudio,
     seek,
     setPlaybackRate: (rate: number) => {
       currentPlaybackRate.current = rate
@@ -283,16 +315,20 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     },
     togglePlayback: () => {
       if (isPlaying) {
-        stopAudio()
+        stopAudio();
       } else {
-        playAudio()
+        if (selectedWords.length > 0) {
+          const startTime = Math.min(...selectedWords.map(w => w.start));
+          setCurrentTime(startTime);
+        }
+        playAudio();
       }
-    }
-  }), [isPlaying, currentTime, audioSource])
+    },
+    clearSelection
+  }), [isPlaying, currentTime, audioSource, selectedWords, playbackRate]);
 
   return (
     <div ref={containerRef} className="relative w-full bg-white">
-      {/* Waveform section */}
       <div 
         className="relative w-full h-32 border-2 border-black rounded-lg"
         onMouseMove={handleMouseMove}
@@ -303,6 +339,17 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
         />
+        
+        {/* Selection overlay */}
+        {selectedWords.length > 0 && (
+          <div
+            className="absolute top-0 h-full bg-yellow-200 opacity-20"
+            style={{
+              left: `${(Math.min(...selectedWords.map(w => w.start)) / duration) * 100}%`,
+              width: `${((Math.max(...selectedWords.map(w => w.stop)) - Math.min(...selectedWords.map(w => w.start))) / duration) * 100}%`,
+            }}
+          />
+        )}
         
         {/* Timestamp indicator lines */}
         {timestamps.map((timestamp, index) => (
@@ -318,7 +365,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           </React.Fragment>
         ))}
 
-        {/* Red playhead - covers waveform section */}
+        {/* Red playhead */}
         <div 
           className="absolute top-0 h-32 w-0.5 bg-red-500"
           style={{ 
@@ -350,7 +397,11 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           {timestamps.map((timestamp, index) => (
             <div 
               key={index} 
-              className="absolute h-full bg-blue-100 border-2 border-black rounded-xs flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
+              className={`absolute h-full border-2 ${
+                selectedWords.includes(timestamp)
+                  ? 'bg-yellow-100 border-yellow-500'
+                  : 'bg-blue-100 border-black'
+              } rounded-xs flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors`}
               style={{ 
                 left: `${(timestamp.start / duration) * 100}%`,
                 width: `${((timestamp.stop - timestamp.start) / duration) * 100}%`,

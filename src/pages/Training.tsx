@@ -10,9 +10,16 @@ interface AudioDevice {
   kind: MediaDeviceKind;
 }
 
+interface SelectionRange {
+  words: TimeStamp[];
+  startTime: number;
+  endTime: number;
+}
+
 export function Training() {
   const [searchParams] = useSearchParams();
   const [timestamps, setTimestamps] = useState<TimeStamp[]>([]);
+  const [currentSelection, setCurrentSelection] = useState<SelectionRange | null>(null);
   const audioUrl = searchParams.get('audio') || '/samples/mr_freeman.wav';
   const transcriptFile = searchParams.get('transcript') || '/data/timestamps.csv';
   
@@ -77,20 +84,17 @@ export function Training() {
     recordingVisualizerRef.current?.setPlaybackRate(rate);
   };
 
+  const handleSelectionChange = (selection: SelectionRange | null) => {
+    setCurrentSelection(selection);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Target Voice Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Target Voice</h2>
-          <AudioVisualizer 
-            ref={visualizerRef}
-            audioUrl={audioUrl}
-            timestamps={timestamps}
-            playbackRate={playbackRate}
-            onPlayingChange={setIsTargetPlaying}
-          />
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-4 mb-4">
             <button
               className="px-6 py-2 bg-[#6B7AFF] text-white rounded-lg hover:bg-blue-600 text-base font-medium flex items-center gap-2"
               onClick={() => visualizerRef.current?.togglePlayback()}
@@ -100,7 +104,20 @@ export function Training() {
               </span>
               {isTargetPlaying ? 'Pause' : 'Play'}
             </button>
-            <div className="relative">
+
+            {currentSelection && (
+              <button
+                className="px-2 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs flex items-center gap-1"
+                onClick={() => {
+                  visualizerRef.current?.clearSelection();
+                }}
+              >
+                <span className="material-icons text-sm">close</span>
+                Clear
+              </button>
+            )}
+
+            <div className="relative ml-auto">
               <button
                 onClick={() => setShowSpeedControl(!showSpeedControl)}
                 className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm flex items-center gap-1"
@@ -129,6 +146,15 @@ export function Training() {
               )}
             </div>
           </div>
+
+          <AudioVisualizer 
+            ref={visualizerRef}
+            audioUrl={audioUrl}
+            timestamps={timestamps}
+            playbackRate={playbackRate}
+            onPlayingChange={setIsTargetPlaying}
+            onSelectionChange={handleSelectionChange}
+          />
         </div>
 
         {/* Recording Section */}
@@ -165,6 +191,7 @@ export function Training() {
                   </div>
                 )}
               </div>
+              
               <button
                 onClick={isRecording ? stopRecording : startRecording}
                 className={`px-6 py-2 rounded-lg text-white font-medium text-base ${
@@ -173,7 +200,12 @@ export function Training() {
                     : 'bg-[#6B7AFF] hover:bg-blue-600'
                 }`}
               >
-                {isRecording ? 'Stop Recording' : 'Start Recording'}
+                <span className="flex items-center gap-2">
+                  <span className="material-icons">{isRecording ? 'stop' : 'mic'}</span>
+                  {isRecording ? 'Stop Recording' : currentSelection ? 
+                    (currentSelection.words.length === 1 ? 'Record Word' : 'Record Phrase') : 
+                    'Select text to record'}
+                </span>
               </button>
             </div>
           </div>
