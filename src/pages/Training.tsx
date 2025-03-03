@@ -1,110 +1,99 @@
-import { useState, useRef, useEffect } from 'react'
-import { useVoiceRecorder } from '../hooks/useVoiceRecorder'
-import { voiceSamples } from '../config/voiceSamples'
-import { AudioVisualizer, AudioVisualizerHandle } from '../components/AudioVisualizer'
-import { parseTimestampsCSV, TimeStamp } from '../utils/parseTimestamps'
+import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { AudioVisualizer, AudioVisualizerHandle } from '../components/AudioVisualizer';
+import { parseTimestampsCSV, TimeStamp } from '../utils/parseTimestamps';
+import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 
 interface AudioDevice {
-  deviceId: string
-  label: string
-  kind: MediaDeviceKind
+  deviceId: string;
+  label: string;
+  kind: MediaDeviceKind;
 }
 
 export function Training() {
-  const [selectedDevice, setSelectedDevice] = useState<string>('')
-  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([])
-  const [showDeviceSelector, setShowDeviceSelector] = useState(false)
-  const [selectedSample, setSelectedSample] = useState(voiceSamples[0])
-  const [playbackRate, setPlaybackRate] = useState(1.0)
-  const [timestamps, setTimestamps] = useState<TimeStamp[]>([])
-  const [isAudioLoaded, setIsAudioLoaded] = useState(false)
-  const [showSpeedControl, setShowSpeedControl] = useState(false)
-  const [isTargetPlaying, setIsTargetPlaying] = useState(false)
-  const [isRecordingPlaying, setIsRecordingPlaying] = useState(false)
+  const [searchParams] = useSearchParams();
+  const [timestamps, setTimestamps] = useState<TimeStamp[]>([]);
+  const audioUrl = searchParams.get('audio') || '/samples/mr_freeman.wav';
+  const transcriptFile = searchParams.get('transcript') || '/data/timestamps.csv';
+  
+  // Playback controls
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+  const [showSpeedControl, setShowSpeedControl] = useState(false);
+  const [isTargetPlaying, setIsTargetPlaying] = useState(false);
+  const [isRecordingPlaying, setIsRecordingPlaying] = useState(false);
+  const visualizerRef = useRef<AudioVisualizerHandle>(null);
+  const recordingVisualizerRef = useRef<AudioVisualizerHandle>(null);
+
+  // Recording controls
+  const [selectedDevice, setSelectedDevice] = useState<string>('');
+  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
+  const [showDeviceSelector, setShowDeviceSelector] = useState(false);
   const { isRecording, audioURL, error, startRecording, stopRecording } = useVoiceRecorder({
     deviceId: selectedDevice
-  })
-  const visualizerRef = useRef<AudioVisualizerHandle>(null)
-  const recordingVisualizerRef = useRef<AudioVisualizerHandle>(null)
+  });
 
+  // Load timestamps
   useEffect(() => {
-    // Request permission and get devices
+    parseTimestampsCSV(transcriptFile).then(parsedTimestamps => {
+      setTimestamps(parsedTimestamps);
+    }).catch(error => {
+      console.error('Error loading timestamps:', error);
+    });
+  }, [transcriptFile]);
+
+  // Load audio devices
+  useEffect(() => {
     async function getAudioDevices() {
       try {
-        // First request permission
-        await navigator.mediaDevices.getUserMedia({ audio: true })
-        
-        // Then enumerate devices
-        const devices = await navigator.mediaDevices.enumerateDevices()
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
         const audioInputs = devices
           .filter(device => device.kind === 'audioinput')
           .map(device => ({
             deviceId: device.deviceId,
             label: device.label || `Microphone ${device.deviceId.slice(0, 5)}...`,
             kind: device.kind
-          }))
+          }));
         
-        setAudioDevices(audioInputs)
+        setAudioDevices(audioInputs);
         if (audioInputs.length > 0 && !selectedDevice) {
-          setSelectedDevice(audioInputs[0].deviceId)
+          setSelectedDevice(audioInputs[0].deviceId);
         }
       } catch (err) {
-        console.error('Error accessing audio devices:', err)
+        console.error('Error accessing audio devices:', err);
       }
     }
 
-    getAudioDevices()
-
-    // Listen for device changes
-    navigator.mediaDevices.addEventListener('devicechange', getAudioDevices)
+    getAudioDevices();
+    navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
     return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices)
-    }
-  }, [])
-
-  useEffect(() => {
-    // Load timestamps
-    parseTimestampsCSV('/data/timestamps.csv').then(parsedTimestamps => {
-      setTimestamps(parsedTimestamps);
-    }).catch(error => {
-      console.error('Error loading timestamps:', error);
-    });
+      navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
+    };
   }, []);
 
-  const handlePlayPauseClick = () => {
-    visualizerRef.current?.togglePlayback()
-  }
-
-  const handleRecordingPlayPauseClick = () => {
-    recordingVisualizerRef.current?.togglePlayback()
-  }
-
   const handlePlaybackRateChange = (rate: number) => {
-    setPlaybackRate(rate)
-    visualizerRef.current?.setPlaybackRate(rate)
-    recordingVisualizerRef.current?.setPlaybackRate(rate)
-  }
+    setPlaybackRate(rate);
+    visualizerRef.current?.setPlaybackRate(rate);
+    recordingVisualizerRef.current?.setPlaybackRate(rate);
+  };
 
   return (
-    <div className="min-h-screen w-screen">
-      {/* Target Voice Section */}
-      <div className="w-screen bg-white mt-8">
-        <div className="px-8">
-          <h2 className="text-2xl font-semibold text-gray-900">Target Voice: {selectedSample.name}</h2>
-        </div>
-        <div className="px-8 py-4">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Target Voice Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Target Voice</h2>
           <AudioVisualizer 
             ref={visualizerRef}
-            audioUrl={selectedSample.audioFile}
-            playbackRate={playbackRate}
-            onPlaybackRateChange={handlePlaybackRateChange}
-            onPlayingChange={setIsTargetPlaying}
+            audioUrl={audioUrl}
             timestamps={timestamps}
+            playbackRate={playbackRate}
+            onPlayingChange={setIsTargetPlaying}
           />
           <div className="flex items-center justify-between mt-4">
             <button
               className="px-6 py-2 bg-[#6B7AFF] text-white rounded-lg hover:bg-blue-600 text-base font-medium flex items-center gap-2"
-              onClick={handlePlayPauseClick}
+              onClick={() => visualizerRef.current?.togglePlayback()}
             >
               <span className="material-icons">
                 {isTargetPlaying ? 'pause' : 'play_arrow'}
@@ -141,12 +130,10 @@ export function Training() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Recording Section */}
-      <div className="w-screen bg-white mt-4">
-        <div className="px-8 py-4">
-          <div className="flex items-center justify-between">
+        {/* Recording Section */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-2xl font-semibold text-gray-900">Your Recording</h3>
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -164,8 +151,8 @@ export function Training() {
                         <button
                           key={device.deviceId}
                           onClick={() => {
-                            setSelectedDevice(device.deviceId)
-                            setShowDeviceSelector(false)
+                            setSelectedDevice(device.deviceId);
+                            setShowDeviceSelector(false);
                           }}
                           className={`px-3 py-2 text-left rounded text-sm hover:bg-gray-100 ${
                             selectedDevice === device.deviceId ? 'bg-gray-100' : ''
@@ -192,11 +179,11 @@ export function Training() {
           </div>
 
           {error && (
-            <p className="text-red-600 mt-4">{error}</p>
+            <p className="text-red-600 mb-4">{error}</p>
           )}
           
           {audioURL && (
-            <div className="mt-4">
+            <div>
               <AudioVisualizer 
                 ref={recordingVisualizerRef}
                 audioUrl={audioURL}
@@ -206,7 +193,7 @@ export function Training() {
               <div className="flex items-center justify-between mt-4">
                 <button
                   className="px-6 py-2 bg-[#6B7AFF] text-white rounded-lg hover:bg-blue-600 text-base font-medium flex items-center gap-2"
-                  onClick={handleRecordingPlayPauseClick}
+                  onClick={() => recordingVisualizerRef.current?.togglePlayback()}
                 >
                   <span className="material-icons">
                     {isRecordingPlaying ? 'pause' : 'play_arrow'}
@@ -219,5 +206,5 @@ export function Training() {
         </div>
       </div>
     </div>
-  )
+  );
 }

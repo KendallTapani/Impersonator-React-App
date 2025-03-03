@@ -1,11 +1,18 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      borderWidth: {
+        '5': '5px',
+      },
+      borderRadius: {
+        'xs': '2px',
+      },
+    },
   },
   plugins: [],
 } 

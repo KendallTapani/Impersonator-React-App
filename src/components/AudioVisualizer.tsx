@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 
 interface TimeStamp {
   start: number;
@@ -291,10 +291,10 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   }), [isPlaying, currentTime, audioSource])
 
   return (
-    <div ref={containerRef} className="relative w-full bg-white rounded-lg shadow-sm">
+    <div ref={containerRef} className="relative w-full bg-white">
       {/* Waveform section */}
       <div 
-        className="relative w-full h-32"
+        className="relative w-full h-32 border-2 border-black rounded-lg"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
@@ -304,6 +304,20 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           className="absolute inset-0 w-full h-full"
         />
         
+        {/* Timestamp indicator lines */}
+        {timestamps.map((timestamp, index) => (
+          <React.Fragment key={`lines-${index}`}>
+            <div 
+              className="absolute top-0 h-full w-px bg-gray-300"
+              style={{ left: `${(timestamp.start / duration) * 100}%` }}
+            />
+            <div 
+              className="absolute top-0 h-full w-px bg-gray-300"
+              style={{ left: `${(timestamp.stop / duration) * 100}%` }}
+            />
+          </React.Fragment>
+        ))}
+
         {/* Red playhead - covers waveform section */}
         <div 
           className="absolute top-0 h-32 w-0.5 bg-red-500"
@@ -332,11 +346,11 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       
       {/* Timestamp boxes section */}
       {timestamps.length > 0 && (
-        <div className="relative w-full h-12 border-t border-gray-200">
+        <div className="relative w-full h-12 mt-1">
           {timestamps.map((timestamp, index) => (
             <div 
               key={index} 
-              className="absolute h-full bg-blue-100 border border-blue-300 flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
+              className="absolute h-full bg-blue-100 border-2 border-black rounded-xs flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
               style={{ 
                 left: `${(timestamp.start / duration) * 100}%`,
                 width: `${((timestamp.stop - timestamp.start) / duration) * 100}%`,
