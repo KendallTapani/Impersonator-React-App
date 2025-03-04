@@ -27,6 +27,7 @@ export interface AudioVisualizerHandle {
   setPlaybackRate: (rate: number) => void;
   togglePlayback: () => void;
   clearSelection: () => void;
+  getAudioBuffer: () => Promise<AudioBuffer | null>;
 }
 
 export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizerProps>(({
@@ -46,7 +47,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioSource, setAudioSource] = useState<AudioBufferSourceNode | null>(null)
-  const [startTime, setStartTime] = useState<number>(0)
+  const playbackStartTimeRef = useRef<number>(0)
   const currentPlaybackRate = useRef(playbackRate)
   const bufferRef = useRef<AudioBuffer | null>(null)
   const stopTimeoutRef = useRef<number | null>(null)
@@ -108,24 +109,54 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   useEffect(() => {
     if (!isPlaying) return
 
+    // Store the playback start time and current position in refs for accurate time calculation
+    playbackStartTimeRef.current = audioContext.currentTime;
+    const startingPosition = currentTime;
+
     const interval = setInterval(() => {
-      const newTime = audioContext.currentTime - startTime
+      // Calculate current position based on elapsed time and playback rate
+      const elapsedTime = (audioContext.currentTime - playbackStartTimeRef.current) * currentPlaybackRate.current;
+      const newTime = startingPosition + elapsedTime;
+      
       const endTime = selectedWords.length > 0
         ? Math.max(...selectedWords.map(w => w.stop))
         : duration;
       
-      if (newTime >= endTime) {
-        setCurrentTime(endTime)
-        setIsPlaying(false)
-        clearInterval(interval)
+      if (newTime >= endTime - 0.01) { // Slightly reduced threshold to ensure we reach the end
+        // Clear interval first to prevent further updates
+        clearInterval(interval);
+        
+        // FIRST: Force position to exact end
+        setCurrentTime(endTime);
+        onTimeUpdate?.(endTime);
+        
+        // SECOND: Stop playback after a delay to ensure the UI visibly shows the end position
+        setTimeout(() => {
+          setIsPlaying(false);
+          onPlayingChange?.(false);
+        }, 300);
       } else {
-        setCurrentTime(newTime)
+        setCurrentTime(newTime);
+        onTimeUpdate?.(newTime);
       }
-      onTimeUpdate?.(newTime)
-    }, 16)
+    }, 16);
 
-    return () => clearInterval(interval)
-  }, [isPlaying, startTime, duration, audioContext, onTimeUpdate, selectedWords])
+    return () => clearInterval(interval);
+  }, [isPlaying, currentTime, duration, audioContext, onTimeUpdate, selectedWords, currentPlaybackRate.current]);
+
+  // Add this helper function to properly position the red crosshair
+  const getPositionPercentage = (time: number) => {
+    // Special handling for end position to ensure we reach 100%
+    const endTime = selectedWords.length > 0
+      ? Math.max(...selectedWords.map(w => w.stop))
+      : duration;
+    
+    if (Math.abs(time - endTime) < 0.02) {
+      return 100;
+    }
+    
+    return (time / duration) * 100;
+  };
 
   const playAudio = () => {
     const buffer = bufferRef.current
@@ -136,53 +167,77 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     source.connect(audioContext.destination)
     source.playbackRate.value = currentPlaybackRate.current
     
-    // Calculate the correct start and end times
-    const playStartTime = selectedWords.length > 0 
-      ? Math.min(...selectedWords.map(w => w.start))
-      : currentTime;
-    
+    // Calculate playback parameters based on current time and selection
+    const playStartTime = currentTime;
     const playEndTime = selectedWords.length > 0
       ? Math.max(...selectedWords.map(w => w.stop))
       : buffer.duration;
     
-    const playDuration = (playEndTime - playStartTime) / playbackRate;
+    const playDuration = playEndTime - playStartTime;
     
-    // Start the audio from the correct position
+    // Start playback from the current position
     source.start(0, playStartTime, playDuration);
-    setAudioSource(source)
-    setIsPlaying(true)
-    setStartTime(audioContext.currentTime - playStartTime)
-    setCurrentTime(playStartTime)
+    setAudioSource(source);
+    setIsPlaying(true);
+    playbackStartTimeRef.current = audioContext.currentTime;
+
+    // Create a more precise timeout to ensure we handle the end correctly
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the playhead reaches the end position
+    const actualDurationMs = (playDuration / currentPlaybackRate.current) * 1000;
+    stopTimeoutRef.current = setTimeout(() => {
+      setCurrentTime(playEndTime);
+    }, actualDurationMs - 10);
 
     source.onended = () => {
-      setIsPlaying(false)
-      setAudioSource(null)
-      setCurrentTime(playEndTime)
-      onPlayingChange?.(false)
+      setIsPlaying(false);
+      setAudioSource(null);
+      onPlayingChange?.(false);
+      
+      // Ensure the playhead is at the end position
+      setCurrentTime(playEndTime);
       
       if (stopTimeoutRef.current) {
-        clearTimeout(stopTimeoutRef.current)
-        stopTimeoutRef.current = null
+        clearTimeout(stopTimeoutRef.current);
+        stopTimeoutRef.current = null;
       }
-    }
+    };
 
-    onPlayingChange?.(true)
+    onPlayingChange?.(true);
   }
 
   const stopAudio = () => {
+    if (!isPlaying) return;
+    
+    const source = audioSource;
+    if (source) {
+      source.stop();
+      source.disconnect();
+      
+      // Don't force position to end when manually stopping
+      // Only update position to end if we've actually reached the end
+      const endTime = selectedWords.length > 0
+        ? Math.max(...selectedWords.map(w => w.stop))
+        : duration;
+      
+      if (currentTime >= endTime - 0.02) {
+        setCurrentTime(endTime);
+        onTimeUpdate?.(endTime);
+      }
+    }
+    
+    setIsPlaying(false);
+    setAudioSource(null);
+    onPlayingChange?.(false);
+    
     if (stopTimeoutRef.current) {
       clearTimeout(stopTimeoutRef.current);
       stopTimeoutRef.current = null;
     }
-    
-    if (audioSource) {
-      audioSource.stop()
-      audioSource.disconnect()
-    }
-    setIsPlaying(false)
-    setAudioSource(null)
-    onPlayingChange?.(false)
-  }
+  };
 
   const seek = (time: number) => {
     const clampedTime = Math.max(0, Math.min(time, duration))
@@ -197,6 +252,9 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
 
   const handleTimestampClick = (timestamp: TimeStamp, event: React.MouseEvent) => {
     event.stopPropagation();
+    
+    // Store the timestamp for immediate access
+    let clickedWordStart = timestamp.start;
     
     setSelectedWords(prev => {
       let newSelection: TimeStamp[];
@@ -238,6 +296,12 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
 
       return newSelection;
     });
+
+    // Always move the crosshair to the clicked word's start time, regardless of selection
+    // Using requestAnimationFrame to avoid React state update issues
+    requestAnimationFrame(() => {
+      setCurrentTime(clickedWordStart);
+    });
   }
 
   const clearSelection = () => {
@@ -267,6 +331,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     ctx.beginPath()
     ctx.moveTo(0, amp)
 
+    // Adjust the scaling factor to make the waveform more compact
+    const scaleFactor = 0.5 // Reduce the amplitude by half
     for (let i = 0; i < rect.width; i++) {
       let min = 1.0
       let max = -1.0
@@ -275,8 +341,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         if (datum < min) min = datum
         if (datum > max) max = datum
       }
-      ctx.lineTo(i, amp + min * amp)
-      ctx.lineTo(i, amp + max * amp)
+      ctx.lineTo(i, amp + min * amp * scaleFactor)
+      ctx.lineTo(i, amp + max * amp * scaleFactor)
     }
 
     ctx.strokeStyle = '#6B7AFF'
@@ -317,15 +383,12 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       if (isPlaying) {
         stopAudio();
       } else {
-        if (selectedWords.length > 0) {
-          const startTime = Math.min(...selectedWords.map(w => w.start));
-          setCurrentTime(startTime);
-        }
         playAudio();
       }
     },
-    clearSelection
-  }), [isPlaying, currentTime, audioSource, selectedWords, playbackRate]);
+    clearSelection,
+    getAudioBuffer: async () => bufferRef.current
+  }), [isPlaying, currentTime, audioSource, playbackRate]);
 
   return (
     <div ref={containerRef} className="relative w-full bg-white">
@@ -369,7 +432,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         <div 
           className="absolute top-0 h-32 w-0.5 bg-red-500"
           style={{ 
-            left: `${(currentTime / duration) * 100}%`,
+            left: `${getPositionPercentage(currentTime)}%`,
             transition: isPlaying ? 'left 0.1s linear' : 'none'
           }}
         />
@@ -415,4 +478,4 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       )}
     </div>
   )
-}) 
+})
