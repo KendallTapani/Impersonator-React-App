@@ -33,6 +33,7 @@ export const Training = () => {
   const [timestamps, setTimestamps] = useState<TimeStamp[]>([]);
   const [isRecordingPlaying, setIsRecordingPlaying] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isHoveringRecordButton, setIsHoveringRecordButton] = useState<boolean>(false);
   const [transcriptFile, setTranscriptFile] = useState(
     searchParams.get('transcript') || '/data/timestamps.csv'
   );
@@ -924,6 +925,10 @@ export const Training = () => {
               <button 
                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
                 onClick={handleRecordingPlayback}
+                onMouseEnter={() => setIsHoveringRecordButton(true)}
+                onMouseLeave={() => setIsHoveringRecordButton(false)}
+                onTouchStart={() => setIsHoveringRecordButton(true)}
+                onTouchEnd={() => setIsHoveringRecordButton(false)}
               >
                 <span className="mr-2">
                   {isRecordingPlaying ? (
@@ -958,8 +963,17 @@ export const Training = () => {
             // Determine if audio is playing
             const isAudioPlaying = isTargetPlaying || isRecordingPlaying;
             
-            // Determine the color based on which audio is playing
-            const waveformColor = isTargetPlaying ? '#4CAF50' : '#2196F3'; // Green for sample, blue for recording
+            // Determine the color based on playing state and hover state
+            const waveformColor = isTargetPlaying 
+              ? '#4CAF50'  // Green for sample audio
+              : isRecordingPlaying || isHoveringRecordButton 
+                ? '#2196F3'  // Blue for recording or when hovering over recording button
+                : '#4CAF50';  // Default to green when idle
+            
+            // Determine the background color based on state
+            const waveformBackgroundColor = isRecordingPlaying || isHoveringRecordButton
+              ? '#e6f5ff'  // Light blue for recording mode
+              : '#f8f9fa';  // Default light gray
             
             // Determine the label
             const waveformLabel = '';
@@ -973,6 +987,7 @@ export const Training = () => {
                 audioElement={activeAudioElement}
                 isPlaying={isAudioPlaying}
                 color={waveformColor}
+                backgroundColor={waveformBackgroundColor}
                 height={150}
                 label={waveformLabel}
               />

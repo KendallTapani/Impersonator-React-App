@@ -7,6 +7,7 @@ interface AudioWaveformProps {
   width?: number;
   height?: number;
   color?: string;
+  backgroundColor?: string;
   isPlaying?: boolean;
   label?: string;
 }
@@ -19,6 +20,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   width = 800,
   height = 200,
   color = '#4CAF50', // Default green color
+  backgroundColor = '#f8f9fa', // Default light gray background
   isPlaying = false,
   label = '',
 }) => {
@@ -45,6 +47,35 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
       debug.log('audioElement set to null/undefined');
     }
   }, [audioElement]);
+
+  // Draw a flat line when not playing
+  useEffect(() => {
+    if (!isPlaying && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      // Set up the canvas
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = '100%';
+      canvas.style.height = `${height}px`;
+      ctx.scale(dpr, dpr);
+      
+      // Clear canvas
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw flat line at center of canvas
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+    }
+  }, [isPlaying, color, backgroundColor, width, height]);
   
   // Cleanup function for when audio sources change
   const cleanupCurrentAudioSource = useCallback(() => {
@@ -182,7 +213,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
+    canvas.style.width = '100%';
     canvas.style.height = `${height}px`;
     ctx.scale(dpr, dpr);
     
@@ -197,7 +228,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
       analyser.getByteTimeDomainData(dataArray);
       
       // Clear canvas
-      ctx.fillStyle = '#f5f5f5';
+      ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, width, height);
       
       // Draw waveform
@@ -281,31 +312,12 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
     <div className="audio-waveform-container" style={{ width: '100%' }}>
       {label && <div className="waveform-label">{label}</div>}
       <div className="waveform-canvas-container" style={{ position: 'relative', width: '100%', height }}>
-        {!isPlaying && (
-          <div 
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
-              color: '#666',
-              fontSize: '14px',
-            }}
-          >
-            Play audio to see waveform
-          </div>
-        )}
         <canvas 
           ref={canvasRef} 
           style={{ 
             width: '100%', 
             height: '100%',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: backgroundColor,
             border: '2px solid #ddd',
             borderRadius: '4px',
           }}
