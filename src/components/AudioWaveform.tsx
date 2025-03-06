@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, forwardRef } from 'react';
 import { useDebug } from '../hooks/useDebug';
 
 // Define prop interface
@@ -10,322 +10,406 @@ interface AudioWaveformProps {
   backgroundColor?: string;
   isPlaying?: boolean;
   label?: string;
+  startTime?: number | null;
+  endTime?: number | null;
 }
+
+// Define ref interface
+interface AudioWaveformRef {
+  getAudioContext: () => AudioContext | null;
+  initializeAudioContext: () => Promise<AudioContext | null>;
+  getAnalyser: () => AnalyserNode | null;
+}
+
+// Create a map to track audio elements already connected to audio contexts
+const connectedAudioElements = new Map<HTMLAudioElement, MediaElementAudioSourceNode>();
 
 /**
  * Real-time audio waveform visualization component (oscilloscope style)
  */
-export const AudioWaveform: React.FC<AudioWaveformProps> = ({
-  audioElement,
-  width = 800,
-  height = 200,
-  color = '#4CAF50', // Default green color
-  backgroundColor = '#f8f9fa', // Default light gray background
-  isPlaying = false,
-  label = '',
-}) => {
+export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((props, ref) => {
+  const {
+    audioElement,
+    width = 800,
+    height = 200,
+    color = '#4CAF50', // Default green color
+    backgroundColor = '#f8f9fa', // Default light gray background
+    isPlaying = false,
+    label = '',
+    startTime = null,
+    endTime = null,
+  } = props;
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const [audioCtx, setAudioCtx] = useState<AudioContext | null>(null);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const previousAudioElementRef = useRef<HTMLAudioElement | null>(null);
-  
   const debug = useDebug('AudioWaveform');
+  const prevAudioElementRef = useRef<HTMLAudioElement | null>(null);
   
-  // Debug props changes
+  // Initialize audio context explicitly
+  const initializeAudioContext = useCallback(async () => {
+    debug.log('Explicitly initializing audio context');
+    
+    if (!audioCtx) {
+      try {
+        const newAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setAudioCtx(newAudioCtx);
+        debug.log('Created new audio context during explicit initialization');
+        return newAudioCtx;
+      } catch (error) {
+        debug.error(`Error creating audio context: ${(error as Error).message}`);
+        return null;
+      }
+    }
+    
+    // If context exists but is suspended, try to resume it
+    if (audioCtx.state === 'suspended') {
+      try {
+        await audioCtx.resume();
+        debug.log('Resumed existing audio context during explicit initialization');
+      } catch (error) {
+        debug.error(`Error resuming audio context: ${(error as Error).message}`);
+      }
+    }
+    
+    return audioCtx;
+  }, [audioCtx]);
+  
+  // Expose methods via ref
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      getAudioContext: () => audioCtx,
+      initializeAudioContext,
+      getAnalyser: () => analyser,
+    }),
+    [audioCtx, analyser, initializeAudioContext]
+  );
+  
+  // Call initialization on mount
   useEffect(() => {
-    debug.log(`isPlaying changed to: ${isPlaying}`);
+    initializeAudioContext();
+  }, [initializeAudioContext]);
+  
+  // Start visualization if we have an audio element, analyser, and isPlaying=true
+  useEffect(() => {
+    if (isPlaying) {
+      debug.log('isPlaying changed to: true');
+      startVisualization();
+    } else {
+      debug.log('isPlaying changed to: false');
+      stopVisualization();
+    }
   }, [isPlaying]);
   
+  // When audio element changes, log it
   useEffect(() => {
     if (audioElement) {
-      debug.log(`audioElement changed: ${audioElement.src.substring(0, 30)}...`);
+      debug.log(`audioElement changed: ${audioElement.src.substring(0, 40)}...`);
+      
+      const hasAudioElementChanged = prevAudioElementRef.current !== audioElement;
+      debug.log(`SOURCE CHANGE: New source ${audioElement.src.substring(0, 40)} vs previous ${prevAudioElementRef.current?.src.substring(0, 40) || 'none'}`);
+      debug.log(`SOURCE CHANGE: Are they the same object? ${!hasAudioElementChanged}`);
+      
+      // Store current audio element reference for future comparisons
+      prevAudioElementRef.current = audioElement;
     } else {
-      debug.log('audioElement set to null/undefined');
+      debug.log('No audio element provided');
     }
   }, [audioElement]);
 
-  // Draw a flat line when not playing
   useEffect(() => {
-    if (!isPlaying && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      
-      // Set up the canvas
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = '100%';
-      canvas.style.height = `${height}px`;
-      ctx.scale(dpr, dpr);
-      
-      // Clear canvas
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, width, height);
-      
-      // Draw flat line at center of canvas
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.moveTo(0, height / 2);
-      ctx.lineTo(width, height / 2);
-      ctx.stroke();
-    }
-  }, [isPlaying, color, backgroundColor, width, height]);
-  
-  // Cleanup function for when audio sources change
-  const cleanupCurrentAudioSource = useCallback(() => {
-    debug.log('Cleaning up current audio source');
-    stopVisualization();
+    // Always try to ensure audio context is created, even if not playing
+    ensureAudioContextState();
     
-    // Only disconnect the source, keep the context and analyzer
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.disconnect();
-        debug.log('Disconnected previous source node');
-      } catch (error) {
-        debug.error('Error disconnecting source:', error);
-      }
-      sourceNodeRef.current = null;
-    }
+    // Regular check interval for audio context state
+    const checkInterval = setInterval(() => {
+      ensureAudioContextState();
+    }, 1000);
     
-    setIsConnected(false);
-  }, []);
-  
-  // Set up Web Audio API connections
-  useEffect(() => {
-    const setupAudioAnalyser = async () => {
-      if (!audioElement) {
-        debug.log('No audio element provided');
-        if (animationFrameRef.current) {
-          stopVisualization();
-        }
-        return;
-      }
-      
-      if (!isPlaying) {
-        debug.log('Audio not playing, skipping analyzer setup');
-        if (animationFrameRef.current) {
-          stopVisualization();
-        }
-        return;
-      }
-      
-      debug.log(`Setting up audio analyzer for ${audioElement.src.substring(0, 30)}...`);
-      
-      // If audio element has changed, clean up the previous connections
-      if (previousAudioElementRef.current && previousAudioElementRef.current !== audioElement) {
-        debug.log('Audio element changed, cleaning up previous connections');
-        cleanupCurrentAudioSource();
-      }
-      
-      // Update the reference to the current audio element
-      previousAudioElementRef.current = audioElement;
-      
-      try {
-        // Create audio context if it doesn't exist
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-          debug.log('Created new AudioContext');
-        }
-        
-        // Connect audio element to analyzer if not already connected or if audio element changed
-        if (!isConnected || !sourceNodeRef.current) {
-          // Create analyzer node if it doesn't exist
-          if (!analyserRef.current) {
-            const analyser = audioContextRef.current.createAnalyser();
-            analyser.fftSize = 2048; // For detailed waveform
-            analyserRef.current = analyser;
-            debug.log('Created new AnalyserNode');
-          }
-          
-          const analyser = analyserRef.current;
-          
-          try {
-            // Create source from audio element
-            const source = audioContextRef.current.createMediaElementSource(audioElement);
-            sourceNodeRef.current = source;
-            
-            // Connect source -> analyser -> destination
-            source.connect(analyser);
-            analyser.connect(audioContextRef.current.destination);
-            
-            setIsConnected(true);
-            debug.log('Connected audio to analyser');
-          } catch (error) {
-            // If there's an error creating the source, it might already be connected
-            debug.warn('Error creating source, may already be connected:', error);
-            
-            // Try to reconnect the existing source if possible
-            if (sourceNodeRef.current) {
-              try {
-                sourceNodeRef.current.connect(analyser);
-                analyser.connect(audioContextRef.current.destination);
-                setIsConnected(true);
-                debug.log('Reconnected existing source to analyser');
-              } catch (reconnectError) {
-                debug.error('Error reconnecting source:', reconnectError);
-              }
-            }
-          }
-        }
-        
-        // Start visualization
-        startVisualization();
-      } catch (error) {
-        debug.error('Error setting up audio analyser:', error);
-      }
-    };
-    
-    setupAudioAnalyser();
-    
-    // Cleanup function
     return () => {
-      if (!audioElement || !isPlaying) {
-        stopVisualization();
+      clearInterval(checkInterval);
+      stopVisualization();
+      
+      // Clean up audio context when component unmounts
+      if (audioCtx) {
+        audioCtx.close().catch(err => {
+          debug.error(`Error closing audio context: ${err.message}`);
+        });
       }
     };
-  }, [audioElement, isPlaying, cleanupCurrentAudioSource]);
-  
-  // Start the visualization animation
+  }, []);
+
+  // Set up the audio analyser when the audio element changes
+  useEffect(() => {
+    debug.log('==== AUDIO ANALYZER SETUP ====');
+    
+    if (!audioElement) {
+      debug.log('Audio element: none');
+      debug.log('No audio element provided, skipping setup');
+      return;
+    }
+    
+    debug.log(`Audio element: ${audioElement.src.substring(0, 40)}`);
+    debug.log(`isPlaying: ${isPlaying}, isConnected: ${connectedAudioElements.has(audioElement)}`);
+    
+    // Create AudioContext even if not playing - we want to maintain the context
+    if (!audioCtx) {
+      try {
+        const newAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setAudioCtx(newAudioCtx);
+        debug.log('Created new audio context');
+      } catch (error) {
+        debug.error(`Error creating audio context: ${(error as Error).message}`);
+        return;
+      }
+    }
+
+    // Always try to set up the audio analyzer, even if not playing
+    // This ensures we have the connections ready when playback starts
+    const setupAudioAnalyser = async () => {
+      if (!audioCtx) {
+        debug.log('Audio context not available');
+        return;
+      }
+
+      try {
+        // Resume the audio context if it's suspended
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+          debug.log('Resumed audio context');
+        }
+
+        let source: MediaElementAudioSourceNode;
+        
+        // Check if this audio element is already connected
+        if (connectedAudioElements.has(audioElement)) {
+          // Reuse the existing source
+          source = connectedAudioElements.get(audioElement)!;
+          debug.log('Reusing existing audio source connection');
+        } else {
+          // Create a new connection
+          source = audioCtx.createMediaElementSource(audioElement);
+          connectedAudioElements.set(audioElement, source);
+          debug.log('Created new audio source connection');
+        }
+
+        // Create analyzer if needed
+        if (!analyser) {
+          const newAnalyser = audioCtx.createAnalyser();
+          newAnalyser.fftSize = 2048;
+          setAnalyser(newAnalyser);
+          debug.log('Created new analyser');
+        }
+
+        // Connect the source to the analyser
+        if (analyser) {
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
+          debug.log(`Setting up audio analyzer for ${audioElement.src.substring(0, 40)}...`);
+          
+          // Only start visualization if we're playing
+          if (isPlaying) {
+            startVisualization();
+          }
+        }
+      } catch (error) {
+        debug.error(`Error setting up audio analyser: ${(error as Error).message}`);
+      }
+    };
+
+    setupAudioAnalyser();
+  }, [audioElement, audioCtx]);
+
   const startVisualization = () => {
-    if (!canvasRef.current || !analyserRef.current) return;
+    debug.log('==== START VISUALIZATION ====');
+    if (!canvasRef.current || !analyser) {
+      debug.log(`Cannot start visualization: canvas ref: ${canvasRef.current ? 'available' : 'none'}, analyser: ${analyser ? 'available' : 'none'}`);
+      return;
+    }
+    if (!audioElement) {
+      debug.log('No audio element for visualization');
+      return;
+    }
+    
+    debug.log(`Animation frame ref: ${animationFrameRef.current ? animationFrameRef.current : 'none'}`);
+    
+    // Skip if already running
+    if (animationFrameRef.current !== null) {
+      debug.log('Visualization already running');
+      return;
+    }
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    debug.log(`Created data array with ${bufferLength} bins`);
     
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const context = canvas.getContext('2d');
     
-    const analyser = analyserRef.current;
-    
-    // Create buffer for frequency data if not exists
-    if (!dataArrayRef.current) {
-      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+    if (!context) {
+      debug.log('Canvas context not available');
+      return;
     }
     
-    const dataArray = dataArrayRef.current;
-    const bufferLength = analyser.frequencyBinCount;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
     
-    // Set canvas for high DPI displays
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = '100%';
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
-    
-    // Animation function
     const draw = () => {
-      if (!ctx || !analyser) return;
-      
-      // Schedule next frame
+      // Store reference for cancellation
       animationFrameRef.current = requestAnimationFrame(draw);
       
-      // Get time domain data
+      // Get frequency data
       analyser.getByteTimeDomainData(dataArray);
       
       // Clear canvas
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, width, height);
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, canvasWidth, canvasHeight);
       
       // Draw waveform
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = color;
-      ctx.beginPath();
+      context.lineWidth = 2;
+      context.strokeStyle = color;
+      context.beginPath();
       
-      const sliceWidth = width / bufferLength;
+      const sliceWidth = canvasWidth / bufferLength;
       let x = 0;
       
       for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0; // convert to range of -1 to 1
-        const y = (v * height) / 2;
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvasHeight) / 2;
         
         if (i === 0) {
-          ctx.moveTo(x, y);
+          context.moveTo(x, y);
         } else {
-          ctx.lineTo(x, y);
+          context.lineTo(x, y);
         }
         
         x += sliceWidth;
       }
       
-      ctx.stroke();
+      context.lineTo(canvasWidth, canvasHeight / 2);
+      context.stroke();
     };
     
-    // Start drawing
     draw();
+    debug.log(`Audio visualization started, element: ${audioElement.src}`);
   };
-  
-  // Stop the visualization animation
+
   const stopVisualization = () => {
-    if (animationFrameRef.current) {
+    debug.log('==== STOP VISUALIZATION ====');
+    debug.log(`Animation frame ref: ${animationFrameRef.current ? animationFrameRef.current : 'none'}`);
+    
+    if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
-      debug.log('Stopped visualization');
+      debug.log(`Cancelled animation frame`);
+    } else {
+      debug.log('No animation frame to cancel');
+    }
+    
+    // Don't disconnect audio - we want to keep the connection alive
+    if (audioElement) {
+      debug.log(`Audio visualization stopped, element: ${audioElement.src}`);
+    } else {
+      debug.log('Audio visualization stopped, no element');
     }
   };
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopVisualization();
+
+  const ensureAudioContextState = async () => {
+    debug.log('==== AUDIO CONTEXT STATE CHECK ====');
+    
+    if (!audioCtx) {
+      debug.log('No audio context available');
       
-      // Only fully disconnect when component unmounts
-      if (sourceNodeRef.current) {
+      // Try to create a new audio context if we don't have one
+      if (audioElement) {
         try {
-          sourceNodeRef.current.disconnect();
-          debug.log('Disconnected source node on unmount');
+          const newAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          setAudioCtx(newAudioCtx);
+          debug.log('Created new audio context during state check');
         } catch (error) {
-          debug.error('Error disconnecting source on unmount:', error);
+          debug.error(`Error creating audio context: ${(error as Error).message}`);
         }
-        sourceNodeRef.current = null;
       }
-      
-      if (analyserRef.current) {
-        try {
-          analyserRef.current.disconnect();
-          debug.log('Disconnected analyser node on unmount');
-        } catch (error) {
-          debug.error('Error disconnecting analyser on unmount:', error);
+      return;
+    }
+    
+    debug.log(`Current audio context state: ${audioCtx.state}`);
+    debug.log(`Audio props - element: ${audioElement ? 'present' : 'not present'}, isPlaying: ${isPlaying}`);
+    
+    // Always try to resume the context if it's suspended, regardless of isPlaying
+    // This ensures we have a ready context when playback starts
+    if (audioCtx.state === 'suspended') {
+      try {
+        await audioCtx.resume();
+        debug.log('Successfully resumed audio context');
+      } catch (error) {
+        debug.error(`Failed to resume audio context: ${(error as Error).message}`);
+      }
+    }
+    
+    // If we have an audio element but it's not connected, try to connect it
+    if (audioElement && !connectedAudioElements.has(audioElement) && audioCtx.state === 'running') {
+      try {
+        const source = audioCtx.createMediaElementSource(audioElement);
+        connectedAudioElements.set(audioElement, source);
+        
+        // Create analyzer if needed
+        if (!analyser) {
+          const newAnalyser = audioCtx.createAnalyser();
+          newAnalyser.fftSize = 2048;
+          setAnalyser(newAnalyser);
+          debug.log('Created new analyser during state check');
         }
-        analyserRef.current = null;
+        
+        // Connect the source to the analyser
+        if (analyser) {
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
+          debug.log('Connected audio element during state check');
+        }
+      } catch (error) {
+        debug.error(`Failed to connect audio element: ${(error as Error).message}`);
       }
-      
-      if (audioContextRef.current) {
-        audioContextRef.current.close().then(() => {
-          debug.log('Closed audio context on unmount');
-        }).catch(error => {
-          debug.error('Error closing audio context on unmount:', error);
-        });
-        audioContextRef.current = null;
-      }
-      
-      // Clear previous audio element reference
-      previousAudioElementRef.current = null;
-    };
-  }, []);
-  
+    }
+  };
+
   return (
-    <div className="audio-waveform-container" style={{ width: '100%' }}>
-      {label && <div className="waveform-label">{label}</div>}
-      <div className="waveform-canvas-container" style={{ position: 'relative', width: '100%', height }}>
-        <canvas 
-          ref={canvasRef} 
-          style={{ 
-            width: '100%', 
+    <div style={{ position: 'relative', width, height, marginBottom: '10px' }}>
+      {label && (
+        <div style={{ position: 'absolute', top: '-25px', left: '10px', fontSize: '14px', fontWeight: 'bold' }}>
+          {label}
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        style={{
+          backgroundColor,
+          borderRadius: '4px',
+          display: 'block',
+        }}
+      />
+      {startTime !== null && endTime !== null && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${(startTime / (audioElement?.duration || 1)) * 100}%`,
+            width: `${((endTime - startTime) / (audioElement?.duration || 1)) * 100}%`,
             height: '100%',
-            backgroundColor: backgroundColor,
-            border: '2px solid #ddd',
-            borderRadius: '4px',
+            top: 0,
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderLeft: '2px solid rgba(0, 123, 255, 0.5)',
+            borderRight: '2px solid rgba(0, 123, 255, 0.5)',
+            pointerEvents: 'none',
           }}
         />
-      </div>
+      )}
     </div>
   );
-};
+});
 
 // Also export as default for compatibility
 export default AudioWaveform; 

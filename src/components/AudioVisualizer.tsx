@@ -36,6 +36,7 @@ export interface AudioVisualizerProps {
   currentTime?: number;
   readOnly?: boolean;
   debugName?: string; // Add debug name prop
+  externalAudioRef?: React.RefObject<HTMLAudioElement>;
 }
 
 // Define the handle interface for the ref
@@ -84,6 +85,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     isPlaying: externalIsPlaying,
     currentTime: externalCurrentTime,
     readOnly = false,
+    externalAudioRef,
   } = props;
 
   // Audio and canvas refs
@@ -728,38 +730,9 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
             inline: 'center'
           });
         }
-        
-        // Add a subtle background highlight to the current word without using a crosshair
-        const allTimestampBoxes = container.querySelectorAll('.timestamp-box');
-        allTimestampBoxes.forEach((box) => {
-          (box as HTMLElement).classList.remove('current-word');
-        });
-        
-        // Add the current-word class to highlight the current word
-        currentWordElement.classList.add('current-word');
       }
     }
   }, [currentTime, isPlaying, timestamps]);
-
-  // Add a new CSS style block in the component
-  useEffect(() => {
-    // Add CSS for the current-word class
-    const styleElement = document.createElement('style');
-    styleElement.innerHTML = `
-      .timestamp-box.current-word:not(.selected) {
-        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
-      }
-      .timestamp-box.current-word.selected {
-        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.5), 0 0 0 4px rgba(37, 99, 235, 0.3);
-      }
-    `;
-    document.head.appendChild(styleElement);
-    
-    return () => {
-      // Clean up the style when component unmounts
-      document.head.removeChild(styleElement);
-    };
-  }, []);
 
   // Handle scroll navigation with arrows
   const handleScrollArrow = useCallback((direction: 'left' | 'right') => {
@@ -1087,8 +1060,6 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         onEnded={() => {
           debug.log('Audio playback ended naturally');
           setIsPlaying(false);
-          
-          // Don't reset currentTime to 0, so we maintain the position for replay
           
           if (onPlayingChange) {
             onPlayingChange(false);
