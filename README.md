@@ -52,3 +52,34 @@ export default tseslint.config({
   },
 })
 ```
+
+# Impersonator React App
+
+A voice training application built with React.
+
+## Features
+
+- Audio playback and visualization
+- Word selection and highlighting
+- Voice recording capability
+- Playback rate control
+- Volume adjustment
+- **Real-time audio waveform visualization** - See your voice and the sample audio as a dynamic waveform that moves in real-time
+
+## Development
+
+To run the application locally:
+
+```
+npm install
+npm run dev
+```
+
+## Audio Visualizer
+
+The application includes two types of audio visualization:
+
+1. **Timeline Waveform**: Shows the entire audio track with word timestamps
+2. **Real-time Oscilloscope**: Displays the audio waveform as it plays in real-time
+
+The real-time waveform uses the Web Audio API to analyze audio data and render it to a canvas, providing immediate visual feedback of the audio characteristics.

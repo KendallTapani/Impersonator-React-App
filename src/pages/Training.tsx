@@ -4,20 +4,18 @@ import { AudioVisualizer, TimeStamp, SelectionRange, AudioVisualizerHandle } fro
 import { parseTimestampsCSV } from '../utils/parseTimestamps';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { logger, createTimer, trackRender } from '../utils/debug';
+import { AudioWaveform } from '../components/AudioWaveform';
+import { useDebug } from '../hooks/useDebug';
 
 interface AudioDevice {
   deviceId: string;
   label: string;
 }
 
-export function Training() {
-  // Create a unique debug ID for this instance
-  const debugId = useRef(`training-${Math.floor(Math.random() * 10000)}`);
-  const debug = logger.training;
+export const Training = () => {
+  // Debug logger
+  const debug = useDebug('Training');
   
-  debug.log(`Initializing Training component: ${debugId.current}`);
-  trackRender(`Training ${debugId.current}`);
-
   // URL params
   const [searchParams] = useSearchParams();
 
@@ -40,8 +38,8 @@ export function Training() {
   );
 
   // Refs
-  const visualizerRef = useRef<AudioVisualizerHandle | null>(null);
-  const targetVisualizerRef = useRef<AudioVisualizerHandle | null>(null);
+  const visualizerRef = useRef<AudioVisualizerHandle>(null);
+  const targetVisualizerRef = useRef<AudioVisualizerHandle>(null);
   const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeControlRef = useRef<HTMLDivElement>(null);
@@ -176,10 +174,39 @@ export function Training() {
       }
     } else {
       debug.log('Starting playback');
-      setIsPlaying(true);
+      
+      // Stop any other audio that might be playing
+      if (isTargetPlaying) {
+        debug.log('Stopping target audio playback before playing main audio');
+        setIsTargetPlaying(false);
+        if (targetVisualizerRef.current) {
+          targetVisualizerRef.current.pause();
+        }
+      }
+      
+      if (isRecordingPlaying) {
+        debug.log('Stopping recording playback before playing main audio');
+        setIsRecordingPlaying(false);
+        if (recordingAudioRef.current) {
+          recordingAudioRef.current.pause();
+        }
+      }
+      
+      // Check if we need to reset position for replay
       if (visualizerRef.current) {
+        const currentTime = visualizerRef.current.getCurrentTime();
+        const duration = visualizerRef.current.getDuration();
+        
+        // If we're at or near the end, reset to beginning
+        if (currentTime >= duration - 0.1) {
+          debug.log('Resetting to beginning for replay');
+          visualizerRef.current.seek(0);
+        }
+        
         visualizerRef.current.play();
       }
+      
+      setIsPlaying(true);
     }
   };
 
@@ -193,19 +220,44 @@ export function Training() {
       if (targetVisualizerRef.current) {
         targetVisualizerRef.current.pause();
       }
-    } else if (currentSelection && targetVisualizerRef.current) {
-      debug.log(`Starting target playback from ${currentSelection.startTime.toFixed(2)}s to ${currentSelection.endTime.toFixed(2)}s`);
-      
-      // Set starting position for accurate tracking
-      setSelectionPlayheadTime(currentSelection.startTime);
-      targetVisualizerRef.current.seek(currentSelection.startTime);
-      playheadStartPositionRef.current = currentSelection.startTime;
-      playbackStartTimeRef.current = performance.now();
-      
-      setIsTargetPlaying(true);
-      targetVisualizerRef.current.play();
     } else {
-      debug.warn('Cannot play target: No selection or visualizer reference');
+      debug.log('Starting target playback');
+      
+      // Stop any other audio that might be playing
+      if (isPlaying) {
+        debug.log('Stopping main audio playback before playing target audio');
+        setIsPlaying(false);
+        if (visualizerRef.current) {
+          visualizerRef.current.pause();
+        }
+      }
+      
+      if (isRecordingPlaying) {
+        debug.log('Stopping recording playback before playing target audio');
+        setIsRecordingPlaying(false);
+        if (recordingAudioRef.current) {
+          recordingAudioRef.current.pause();
+        }
+      }
+      
+      if (currentSelection && targetVisualizerRef.current) {
+        // If we're at the end of the selection, reset to the beginning
+        if (selectionPlayheadTime >= currentSelection.endTime - 0.1) {
+          debug.log('Resetting selection playhead to start for replay');
+          setSelectionPlayheadTime(currentSelection.startTime);
+        }
+        
+        // Set up tracking variables
+        playheadStartPositionRef.current = selectionPlayheadTime;
+        playbackStartTimeRef.current = performance.now();
+        
+        // Seek to the current selection start time and play
+        targetVisualizerRef.current.seek(selectionPlayheadTime);
+        targetVisualizerRef.current.play();
+        setIsTargetPlaying(true);
+      } else {
+        debug.warn('Cannot play target: No selection or visualizer reference');
+      }
     }
   };
 
@@ -257,11 +309,9 @@ export function Training() {
         setTimeout(() => {
           setIsTargetPlaying(false);
           
-          // Reset playhead position after a brief pause
-          setTimeout(() => {
-            debug.log('Resetting playhead position to start');
-            setSelectionPlayheadTime(currentSelection.startTime);
-          }, 300);
+          // We're no longer resetting the position automatically
+          // This allows the user to replay from the same position
+          
         }, 50);
         
         clearInterval(interval);
@@ -276,17 +326,53 @@ export function Training() {
 
   const handleRecordingPlayback = () => {
     debug.log(`Recording playback button clicked, current state: ${isRecordingPlaying ? 'playing' : 'paused'}`);
-    setIsRecordingPlaying(!isRecordingPlaying);
+    
+    // Stop any other audio that might be playing
+    if (isPlaying) {
+      debug.log('Stopping sample audio playback before playing recording');
+      setIsPlaying(false);
+      if (visualizerRef.current) {
+        visualizerRef.current.pause();
+      }
+    }
+    
+    if (isTargetPlaying) {
+      debug.log('Stopping target audio playback before playing recording');
+      setIsTargetPlaying(false);
+      if (targetVisualizerRef.current) {
+        targetVisualizerRef.current.pause();
+      }
+    }
     
     if (recordingAudioRef.current) {
+      debug.log(`Recording audio element: ${recordingAudioRef.current.src.substring(0, 30)}...`);
+      debug.log(`Current time: ${recordingAudioRef.current.currentTime.toFixed(2)}s, Duration: ${recordingAudioRef.current.duration.toFixed(2)}s`);
+      
       if (isRecordingPlaying) {
+        // If currently playing, pause it
+        debug.log('Pausing recording playback');
         recordingAudioRef.current.pause();
+        setIsRecordingPlaying(false);
       } else {
-        recordingAudioRef.current.play().catch(err => {
+        // If recording has ended (currentTime at end), reset position to beginning
+        if (recordingAudioRef.current.ended || 
+            recordingAudioRef.current.currentTime >= recordingAudioRef.current.duration - 0.1) {
+          recordingAudioRef.current.currentTime = 0;
+          debug.log('Resetting recording to beginning for replay');
+        }
+        
+        // Now play it
+        debug.log('Starting recording playback');
+        recordingAudioRef.current.play().then(() => {
+          debug.log('Recording playback started successfully');
+          setIsRecordingPlaying(true);
+        }).catch(err => {
           debug.error('Error playing recording:', err);
           setIsRecordingPlaying(false);
         });
       }
+    } else {
+      debug.error('Recording audio element not available');
     }
   };
 
@@ -514,8 +600,55 @@ export function Training() {
     };
   }, [showVolumeSlider, showPlaybackRateMenu]);
 
+  // Debug helper for audio elements
+  useEffect(() => {
+    if (recordingAudioRef.current) {
+      debug.log('Recording audio element available');
+    }
+  }, [recordingAudioRef.current, audioURL]);
+
   // Debug rendering
   debug.log('Rendering Training component');
+
+  // Initialize recording audio element
+  useEffect(() => {
+    if (audioURL && !recordingAudioRef.current) {
+      debug.log('Creating recording audio element');
+      // Create the audio element programmatically
+      const audioElement = new Audio(audioURL);
+      audioElement.addEventListener('play', () => {
+        debug.log('Recording audio playback started');
+        setIsRecordingPlaying(true);
+      });
+      audioElement.addEventListener('pause', () => {
+        debug.log('Recording audio playback paused');
+        setIsRecordingPlaying(false);
+      });
+      audioElement.addEventListener('ended', () => {
+        debug.log('Recording audio playback ended');
+        setIsRecordingPlaying(false);
+      });
+      audioElement.addEventListener('error', (e) => {
+        debug.error('Recording audio error:', e);
+        setIsRecordingPlaying(false);
+      });
+      
+      // Assign to ref
+      recordingAudioRef.current = audioElement;
+      
+      debug.log(`Recording audio element created: ${audioURL.substring(0, 30)}...`);
+    } else if (!audioURL && recordingAudioRef.current) {
+      debug.log('Cleaning up recording audio element');
+      // Clean up previous audio
+      recordingAudioRef.current = null;
+    } else if (audioURL && recordingAudioRef.current) {
+      // Update source if URL changed
+      if (recordingAudioRef.current.src !== audioURL) {
+        debug.log('Updating recording audio source');
+        recordingAudioRef.current.src = audioURL;
+      }
+    }
+  }, [audioURL]);
 
   return (
     <div className="container mx-auto p-4 bg-white">
@@ -724,38 +857,144 @@ export function Training() {
           </div>
         </div>
         
-        <div className="flex space-x-4 mb-4">
-          <button 
-            className={`text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${currentSelection ? 'bg-green-500 hover:bg-green-600' : 'bg-green-300 cursor-not-allowed'}`}
-            onClick={handleTargetPlayButton}
-            disabled={!currentSelection}
-          >
-            <span className="mr-2">
-              {isTargetPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </span>
-            {isTargetPlaying ? 'Stop' : 'Play Selection'}
-          </button>
+        {/* Audio controls section */}
+        <div className="mb-4">
+          <div className="flex space-x-4 mb-4 items-center">
+            {/* Microphone selection */}
+            <div className="mr-4">
+              <label className="flex items-center text-sm font-medium">
+                <span className="mr-2">Microphone:</span>
+                <select 
+                  className="border rounded p-1"
+                  value={selectedDevice}
+                  onChange={(e) => {
+                    debug.log(`Microphone changed to ${e.target.value}`);
+                    setSelectedDevice(e.target.value);
+                  }}
+                >
+                  {audioDevices.map((device) => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           
-          {/* Hidden div to render timestamp boxes for clicking */}
-          <div style={{ display: 'none' }}>
-            {timestamps.map((timestamp, index) => (
-              <div 
-                key={index}
-                onClick={() => handleWordClick(timestamp, index)}
-              >
-                {timestamp.word}
-              </div>
-            ))}
+            {/* Record button */}
+            <button 
+              className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-lg transition-colors`}
+              onClick={() => {
+                debug.log(`Record button clicked, current state: ${isRecording ? 'recording' : 'not recording'}`);
+                if (isRecording) {
+                  stopRecording();
+                } else {
+                  startRecording();
+                }
+              }}
+            >
+              {isRecording ? 'Stop Recording' : 'Start Recording'}
+            </button>
           </div>
+          
+          {/* Playback controls */}
+          <div className="flex space-x-4 mb-4">
+            <button 
+              className={`text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${currentSelection ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'}`}
+              onClick={handleTargetPlayButton}
+              disabled={!currentSelection}
+            >
+              <span className="mr-2">
+                {isTargetPlaying ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" />
+                    <rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </span>
+              {isTargetPlaying ? 'Stop' : 'Play Selection'}
+            </button>
+            
+            {/* Recording playback button - only show when audioURL exists */}
+            {audioURL && (
+              <button 
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
+                onClick={handleRecordingPlayback}
+              >
+                <span className="mr-2">
+                  {isRecordingPlaying ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="6" y="4" width="4" height="16" />
+                      <rect x="14" y="4" width="4" height="16" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  )}
+                </span>
+                {isRecordingPlaying ? 'Pause' : 'Play Recording'}
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Audio Waveform Visualization */}
+        <div className="mt-4 mb-4">
+          <h3 className="text-lg font-medium mb-2">Real-time Waveform</h3>
+          {/* Render the waveform component with explicit element determination */}
+          {(() => {
+            // Determine which audio element to use
+            const activeAudioElement = isTargetPlaying 
+              ? targetVisualizerRef.current?.getAudioElement() 
+              : isRecordingPlaying 
+                ? recordingAudioRef.current 
+                : null;
+            
+            // Determine if audio is playing
+            const isAudioPlaying = isTargetPlaying || isRecordingPlaying;
+            
+            // Determine the color based on which audio is playing
+            const waveformColor = isTargetPlaying ? '#4CAF50' : '#2196F3'; // Green for sample, blue for recording
+            
+            // Determine the label
+            const waveformLabel = '';
+            
+            // Log what we're passing to the waveform
+            debug.log(`Rendering waveform with: ${activeAudioElement ? 'Audio element' : 'No audio'}, 
+              Playing: ${isAudioPlaying}, Label: ${waveformLabel}`);
+            
+            return (
+              <AudioWaveform 
+                audioElement={activeAudioElement}
+                isPlaying={isAudioPlaying}
+                color={waveformColor}
+                height={150}
+                label={waveformLabel}
+              />
+            );
+          })()}
+        </div>
+        
+        {error && (
+          <p className="text-red-600 mt-2">{error.message}</p>
+        )}
+          
+        {/* Hidden div for audio element and other non-visual elements */}
+        <div style={{ display: 'none' }}>
+          {/* Hidden div to render timestamp boxes for clicking */}
+          {timestamps.map((timestamp, index) => (
+            <div 
+              key={index}
+              onClick={() => handleWordClick(timestamp, index)}
+            >
+              {timestamp.word}
+            </div>
+          ))}
         </div>
         
         {/* Hide target visualizer but keep it in the DOM for audio functionality */}
@@ -771,82 +1010,6 @@ export function Training() {
             debugName="selection-visualizer"
           />
         </div>
-      </div>
-      
-      {/* Recording section */}
-      <div className="mb-8 p-4 bg-slate-100 rounded-lg">
-        <h2 className="text-xl font-bold mb-2">Record Your Voice</h2>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
-            Microphone:
-            <select 
-              className="ml-2 border rounded p-1"
-              value={selectedDevice}
-              onChange={(e) => {
-                debug.log(`Microphone changed to ${e.target.value}`);
-                setSelectedDevice(e.target.value);
-              }}
-            >
-              {audioDevices.map((device) => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        
-        <div className="flex space-x-4 mb-4">
-          <button 
-            className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-lg transition-colors`}
-            onClick={() => {
-              debug.log(`Record button clicked, current state: ${isRecording ? 'recording' : 'not recording'}`);
-              if (isRecording) {
-                stopRecording();
-              } else {
-                startRecording();
-              }
-            }}
-          >
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
-          </button>
-        </div>
-        
-        {audioURL && (
-          <div className="mt-4">
-            <h3 className="text-lg font-medium mb-2">Your Recording</h3>
-            <audio 
-              ref={recordingAudioRef}
-              controls 
-              src={audioURL}
-              className="w-full mb-2"
-              onPlay={() => {
-                debug.log('Recording audio playback started');
-                setIsRecordingPlaying(true);
-              }}
-              onPause={() => {
-                debug.log('Recording audio playback paused');
-                setIsRecordingPlaying(false);
-              }}
-              onEnded={() => {
-                debug.log('Recording audio playback ended');
-                setIsRecordingPlaying(false);
-              }}
-            />
-            
-            <button 
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-              onClick={handleRecordingPlayback}
-            >
-              {isRecordingPlaying ? 'Pause' : 'Play Recording'}
-            </button>
-          </div>
-        )}
-        
-        {error && (
-          <p className="text-red-600 mt-4">{error.message}</p>
-        )}
       </div>
     </div>
   );

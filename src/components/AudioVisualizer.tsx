@@ -56,6 +56,7 @@ export interface AudioVisualizerHandle {
   togglePlayback: () => void;
   clearSelection: () => void;
   getCanvas: () => HTMLCanvasElement | null;
+  getAudioElement: () => HTMLAudioElement | null;
 }
 
 // Create the component with forwardRef to expose the handle
@@ -250,7 +251,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         // Check if playback has reached the end
         if (newTime >= duration - 0.1) {
           debug.log('Playback reached end, stopping');
-          stopAudio();
+          stopAudio(false);
         }
         
         // Continue tracking
@@ -436,14 +437,19 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   }, [onPlayingChange]);
 
   // Stop the audio
-  const stopAudio = useCallback(() => {
+  const stopAudio = useCallback((resetPosition: boolean = true) => {
     debug.log('Stop audio called');
     
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      
+      // Only reset the position if explicitly requested
+      if (resetPosition) {
+        audioRef.current.currentTime = 0;
+        setCurrentTime(0);
+      }
+      
       setIsPlaying(false);
-      setCurrentTime(0);
       debug.log('Audio playback stopped');
       if (onPlayingChange) {
         onPlayingChange(false);
@@ -872,6 +878,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     togglePlayback,
     clearSelection,
     getCanvas: () => canvasRef.current,
+    getAudioElement: () => audioRef.current,
   }), [
     currentTime, 
     duration, 
@@ -1080,6 +1087,9 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         onEnded={() => {
           debug.log('Audio playback ended naturally');
           setIsPlaying(false);
+          
+          // Don't reset currentTime to 0, so we maintain the position for replay
+          
           if (onPlayingChange) {
             onPlayingChange(false);
           }
