@@ -25,6 +25,9 @@ export function Training() {
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('');
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const [volume, setVolume] = useState<number>(1.0);
+  const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
+  const [showPlaybackRateMenu, setShowPlaybackRateMenu] = useState<boolean>(false);
   const [currentSelection, setCurrentSelection] = useState<SelectionRange | null>(null);
   const [selectionPlayheadTime, setSelectionPlayheadTime] = useState<number>(0);
   const [isTargetPlaying, setIsTargetPlaying] = useState<boolean>(false);
@@ -40,6 +43,9 @@ export function Training() {
   const visualizerRef = useRef<AudioVisualizerHandle | null>(null);
   const targetVisualizerRef = useRef<AudioVisualizerHandle | null>(null);
   const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
+  const volumeControlRef = useRef<HTMLDivElement>(null);
+  const playbackRateControlRef = useRef<HTMLDivElement>(null);
   
   // Recording state
   const { audioURL, isRecording, startRecording, stopRecording } = useVoiceRecorder();
@@ -412,12 +418,107 @@ export function Training() {
     testAudioFiles();
   }, [testAudioFiles]);
 
+  // Handle volume change 
+  const handleVolumeChange = (newVolume: number) => {
+    debug.log(`Volume changed to ${newVolume.toFixed(2)}`);
+    
+    setVolume(newVolume);
+    
+    // Update volume in both visualizers
+    if (visualizerRef.current) {
+      visualizerRef.current.setVolume(newVolume);
+    }
+    
+    if (targetVisualizerRef.current) {
+      targetVisualizerRef.current.setVolume(newVolume);
+    }
+    
+    // Also update recording audio volume if present
+    if (recordingAudioRef.current) {
+      recordingAudioRef.current.volume = newVolume;
+    }
+  };
+  
+  // Volume adjustment functions
+  const increaseVolume = () => {
+    const newVolume = Math.min(1.0, volume + 0.1); // Increase by 10% with max at 100%
+    handleVolumeChange(newVolume);
+  };
+  
+  const decreaseVolume = () => {
+    const newVolume = Math.max(0, volume - 0.1); // Decrease by 10% with min at 0%
+    handleVolumeChange(newVolume);
+  };
+
+  // Add a new function to handle the volume slider drag
+  const handleVolumeSliderDrag = useCallback((e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent, sliderRef: React.RefObject<HTMLDivElement>) => {
+    if (!sliderRef.current) return;
+    
+    // Determine if this is a touch or mouse event
+    let clientY: number;
+    
+    if ((e as TouchEvent).touches) {
+      clientY = (e as TouchEvent).touches[0].clientY;
+    } else {
+      clientY = (e as MouseEvent).clientY;
+    }
+    
+    // Get slider dimensions
+    const rect = sliderRef.current.getBoundingClientRect();
+    const sliderHeight = rect.height;
+    const offsetY = clientY - rect.top;
+    
+    // Calculate new volume (invert because slider is vertical - top is max, bottom is min)
+    let newVolume = 1 - (offsetY / sliderHeight);
+    
+    // Clamp volume between 0 and 1
+    newVolume = Math.max(0, Math.min(1, newVolume));
+    
+    // Update volume
+    handleVolumeChange(newVolume);
+  }, [handleVolumeChange]);
+
+  // Toggle volume slider visibility
+  const toggleVolumeSlider = useCallback(() => {
+    setShowVolumeSlider(prev => !prev);
+  }, []);
+
+  // Toggle playback rate menu visibility
+  const togglePlaybackRateMenu = useCallback(() => {
+    setShowPlaybackRateMenu(prev => !prev);
+  }, []);
+
+  // Close volume slider when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        volumeControlRef.current && 
+        !volumeControlRef.current.contains(event.target as Node) &&
+        showVolumeSlider
+      ) {
+        setShowVolumeSlider(false);
+      }
+
+      if (
+        playbackRateControlRef.current && 
+        !playbackRateControlRef.current.contains(event.target as Node) &&
+        showPlaybackRateMenu
+      ) {
+        setShowPlaybackRateMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showVolumeSlider, showPlaybackRateMenu]);
+
   // Debug rendering
   debug.log('Rendering Training component');
 
   return (
     <div className="container mx-auto p-4 bg-white">
-      <h1 className="text-3xl font-bold mb-4">Voice Training</h1>
       
       {/* Target audio section */}
       <div className="mb-8 p-4 bg-slate-100 rounded-lg">
@@ -436,37 +537,175 @@ export function Training() {
         </div>
         
         <div className="flex space-x-4 mb-4">
-          <button 
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            onClick={handleMainPlayButton}
-          >
-            {isTargetPlaying ? 'Pause' : 'Play'}
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">Playback Rate:</span>
-            <select 
-              className="border rounded p-1"
-              value={playbackRate}
-              onChange={(e) => handlePlaybackRateChange(parseFloat(e.target.value))}
+          {/* Audio controls section */}
+          <div className="flex space-x-3 items-center mt-4">
+            {/* Play button */}
+            <button
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center"
+              onClick={handleMainPlayButton}
             >
-              <option value="0.5">0.5x</option>
-              <option value="0.75">0.75x</option>
-              <option value="1">1x</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-            </select>
+              <span className="mr-2">
+                {isPlaying ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" />
+                    <rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </span>
+              {isPlaying ? 'Pause' : 'Play'}
+            </button>
+            
+            {/* Playback rate dropdown button */}
+            <div className="relative" ref={playbackRateControlRef}>
+              <button
+                className="flex items-center space-x-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-2 rounded transition-colors"
+                onClick={togglePlaybackRateMenu}
+                title="Adjust playback rate"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 18l8.5-6L4 6v12zm9 0l8.5-6L13 6v12z"/>
+                </svg>
+                <span className="inline-block w-8 text-center">{playbackRate}x</span>
+              </button>
+              
+              {/* Playback rate menu - conditionally rendered */}
+              {showPlaybackRateMenu && (
+                <div className="absolute p-2 bg-white shadow-md rounded-md z-10 border border-gray-300" 
+                     style={{ left: 'calc(100% + 4px)', top: '0' }}>
+                  <div className="flex flex-col">
+                    {[0.5, 0.75, 1, 1.25, 1.5].map((rate) => (
+                      <button 
+                        key={rate}
+                        className={`px-3 py-1 text-left hover:bg-blue-100 rounded-sm transition-colors ${rate === playbackRate ? 'bg-blue-100 font-medium' : ''}`}
+                        onClick={() => {
+                          handlePlaybackRateChange(rate);
+                          setShowPlaybackRateMenu(false);
+                        }}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Volume button */}
+            <div className="relative" ref={volumeControlRef}>
+              <button
+                className="flex items-center space-x-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-2 rounded transition-colors"
+                onClick={toggleVolumeSlider}
+                title="Adjust volume"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                </svg>
+                <span className="inline-block w-8 text-center">{Math.round(volume * 100)}%</span>
+              </button>
+              
+              {/* Volume slider popup - conditionally rendered */}
+              {showVolumeSlider && (
+                <div className="absolute p-2 bg-white shadow-md rounded-md z-10 border border-gray-300" 
+                     style={{ left: 'calc(100% + 4px)', top: '0' }}>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="relative h-28 w-2 bg-gray-200 rounded-full cursor-pointer hover:bg-gray-300 transition-colors"
+                      ref={volumeSliderRef}
+                      onClick={(e) => handleVolumeSliderDrag(e, volumeSliderRef)}
+                      onMouseDown={(e) => {
+                        const handleMouseMove = (moveEvent: MouseEvent) => {
+                          handleVolumeSliderDrag(moveEvent, volumeSliderRef);
+                        };
+                        
+                        const handleMouseUp = () => {
+                          document.removeEventListener('mousemove', handleMouseMove);
+                          document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
+                        
+                        // Initial position
+                        handleVolumeSliderDrag(e, volumeSliderRef);
+                      }}
+                      onTouchStart={(e) => {
+                        const handleTouchMove = (moveEvent: TouchEvent) => {
+                          handleVolumeSliderDrag(moveEvent, volumeSliderRef);
+                        };
+                        
+                        const handleTouchEnd = () => {
+                          document.removeEventListener('touchmove', handleTouchMove);
+                          document.removeEventListener('touchend', handleTouchEnd);
+                        };
+                        
+                        document.addEventListener('touchmove', handleTouchMove);
+                        document.addEventListener('touchend', handleTouchEnd);
+                        
+                        // Initial position
+                        handleVolumeSliderDrag(e, volumeSliderRef);
+                      }}
+                    >
+                      {/* Filled area */}
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-full transition-all duration-100"
+                        style={{ height: `${volume * 100}%` }}
+                      />
+                      
+                      {/* Draggable knob */}
+                      <div 
+                        className="absolute w-4 h-4 bg-white border border-blue-500 rounded-full shadow-sm hover:shadow-md active:shadow-sm transition-all transform -translate-x-1 -translate-y-1/2 flex items-center justify-center"
+                        style={{ 
+                          top: `${100 - (volume * 100)}%`,
+                          cursor: 'grab',
+                        }}
+                      >
+                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
       
-      {/* Selected audio section */}
-      {currentSelection && (
-        <div className="mb-8 p-4 bg-slate-100 rounded-lg">
-          <h2 className="text-xl font-bold mb-2">Selected Audio</h2>
-          
-          <div className="mb-4 relative">
-            <div className="border-2 border-blue-500 rounded-lg p-2 bg-white">
+      {/* Selected audio section - always render */}
+      <div className="mb-8 p-4 bg-slate-100 rounded-lg">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-bold">Selected Audio</h2>
+          <button 
+            className={`px-3 py-1 rounded text-sm ${currentSelection ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+            onClick={() => {
+              if (visualizerRef.current && currentSelection) {
+                debug.log('Clearing word selection');
+                
+                // Clear selection in both visualizers
+                visualizerRef.current.clearSelection();
+                
+                // Also reset the target visualizer if it exists
+                if (targetVisualizerRef.current) {
+                  targetVisualizerRef.current.clearSelection();
+                }
+                
+                // Make sure to update the current selection state
+                setCurrentSelection(null);
+                setSelectionPlayheadTime(0);
+              }
+            }}
+            disabled={!currentSelection}
+          >
+            Clear Words
+          </button>
+        </div>
+        
+        <div className="mb-4 relative">
+          <div className="border-2 border-blue-500 rounded-lg p-2 bg-white min-h-[50px]">
+            {currentSelection && currentSelection.words.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {currentSelection.words.map((word: TimeStamp, index: number) => (
                   <span 
@@ -477,46 +716,62 @@ export function Training() {
                   </span>
                 ))}
               </div>
-            </div>
-          </div>
-          
-          <div className="flex space-x-4 mb-4">
-            <button 
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-              onClick={handleTargetPlayButton}
-              disabled={!currentSelection}
-            >
-              {isTargetPlaying ? 'Stop' : 'Play Selection'}
-            </button>
-            
-            {/* Hidden div to render timestamp boxes for clicking */}
-            <div style={{ display: 'none' }}>
-              {timestamps.map((timestamp, index) => (
-                <div 
-                  key={index}
-                  onClick={() => handleWordClick(timestamp, index)}
-                >
-                  {timestamp.word}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Show target visualizer for selected portion */}
-          <div className="mt-4">
-            <AudioVisualizer
-              ref={targetVisualizerRef}
-              audioUrl="/samples/mr_freeman.wav"
-              timestamps={currentSelection.words}
-              isPlaying={isTargetPlaying}
-              currentTime={selectionPlayheadTime}
-              onTimestampClick={handleWordClick}
-              readOnly={true}
-              debugName="selection-visualizer"
-            />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500 italic">
+                No words selected
+              </div>
+            )}
           </div>
         </div>
-      )}
+        
+        <div className="flex space-x-4 mb-4">
+          <button 
+            className={`text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${currentSelection ? 'bg-green-500 hover:bg-green-600' : 'bg-green-300 cursor-not-allowed'}`}
+            onClick={handleTargetPlayButton}
+            disabled={!currentSelection}
+          >
+            <span className="mr-2">
+              {isTargetPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </span>
+            {isTargetPlaying ? 'Stop' : 'Play Selection'}
+          </button>
+          
+          {/* Hidden div to render timestamp boxes for clicking */}
+          <div style={{ display: 'none' }}>
+            {timestamps.map((timestamp, index) => (
+              <div 
+                key={index}
+                onClick={() => handleWordClick(timestamp, index)}
+              >
+                {timestamp.word}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Hide target visualizer but keep it in the DOM for audio functionality */}
+        <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
+          <AudioVisualizer
+            ref={targetVisualizerRef}
+            audioUrl="/samples/mr_freeman.wav"
+            timestamps={currentSelection ? currentSelection.words : []}
+            isPlaying={isTargetPlaying}
+            currentTime={selectionPlayheadTime}
+            onTimestampClick={handleWordClick}
+            readOnly={true}
+            debugName="selection-visualizer"
+          />
+        </div>
+      </div>
       
       {/* Recording section */}
       <div className="mb-8 p-4 bg-slate-100 rounded-lg">

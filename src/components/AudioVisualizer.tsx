@@ -49,6 +49,8 @@ export interface AudioVisualizerHandle {
   getIsPlaying: () => boolean;
   getPlaybackRate: () => number;
   setPlaybackRate: (rate: number) => void;
+  getVolume: () => number;
+  setVolume: (volume: number) => void;
   getAudioBuffer: () => Promise<AudioBuffer | null>;
   getFirstSelectedWord: () => TimeStamp | null;
   togglePlayback: () => void;
@@ -99,6 +101,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [playbackRate, setPlaybackRate] = useState<number>(initialPlaybackRate);
+  const [volume, setVolume] = useState<number>(1.0); // Default volume to 100%
   const [hoverTime, setHoverTime] = useState<number>(0);
   
   // Selection state
@@ -181,6 +184,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       }
     };
     
+    // Only attempt to load audio if a URL is provided
     if (audioUrl) {
       loadAudio();
     }
@@ -272,23 +276,43 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     
     if (!ctx) return;
     
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Get device pixel ratio for high-DPI rendering
+    const dpr = window.devicePixelRatio || 1;
     
-    // Set up dimensions
-    const width = canvas.width;
-    const height = canvas.height;
+    // Set up dimensions for high-DPI rendering
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    
+    // Check if canvas size needs updating for DPI
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+      // Scale canvas accounting for device pixel ratio
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      
+      // Scale context to match CSS dimensions but render at higher resolution
+      ctx.scale(dpr, dpr);
+    }
+    
+    // Clear the canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+    
+    // Enable higher quality rendering
+    ctx.imageSmoothingEnabled = false;  // Crisp lines
+    
+    // Set up dimensions for drawing
+    const width = displayWidth;
+    const height = displayHeight;
     
     // Get the audio data
     const data = buffer.getChannelData(0);
     const step = Math.ceil(data.length / width);
     const amp = height / 2;
     
-    // Draw the waveform
+    // Draw the waveform with crisp lines
     ctx.beginPath();
     ctx.moveTo(0, amp);
     
@@ -302,23 +326,26 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         if (datum > max) max = datum;
       }
       
-      ctx.lineTo(i, (1 + min) * amp);
-      ctx.lineTo(i, (1 + max) * amp);
+      // Use exact pixel positions to prevent blurring
+      const x = Math.floor(i) + 0.5; // Align to pixel grid
+      ctx.lineTo(x, Math.floor((1 + min) * amp) + 0.5);
+      ctx.lineTo(x, Math.floor((1 + max) * amp) + 0.5);
     }
     
     ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1;
     ctx.stroke();
     
     // Draw timestamp markers first (so they appear behind the playhead)
     if (timestamps && timestamps.length > 0) {
       timestamps.forEach((ts, index) => {
-        const startX = (ts.start / buffer.duration) * width;
-        const endX = (ts.stop / buffer.duration) * width;
+        const startX = Math.floor((ts.start / buffer.duration) * width) + 0.5;
+        const endX = Math.floor((ts.stop / buffer.duration) * width) + 0.5;
         
         // Draw selected timestamps with a different color
         if (ts.selected) {
           ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
-          ctx.fillRect(startX, 0, endX - startX, height);
+          ctx.fillRect(Math.floor(startX), 0, Math.floor(endX - startX), height);
           
           // Add a subtle gradient to highlight selected regions
           const gradient = ctx.createLinearGradient(startX, 0, startX, height);
@@ -326,7 +353,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
           gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
           gradient.addColorStop(1, 'rgba(59, 130, 246, 0.5)');
           ctx.fillStyle = gradient;
-          ctx.fillRect(startX, 0, endX - startX, height);
+          ctx.fillRect(Math.floor(startX), 0, Math.floor(endX - startX), height);
         }
         
         // Draw timestamp start marker
@@ -348,7 +375,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     }
     
     // Draw the playhead (on top of everything else)
-    const playheadX = (currentPosition / buffer.duration) * width;
+    const playheadX = Math.floor((currentPosition / buffer.duration) * width) + 0.5;
     
     ctx.beginPath();
     ctx.moveTo(playheadX, 0);
@@ -448,7 +475,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     const clickedWordStart = timestamp.start;
     setCurrentTime(clickedWordStart);
     
-    // Toggle selection state of the clicked timestamp
+    // Create a copy of timestamps for modification
     const newTimestamps = [...timestamps];
     
     if (event.shiftKey && firstSelectedWord !== null) {
@@ -459,28 +486,96 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       const startIndex = Math.min(firstSelectedIndex, index);
       const endIndex = Math.max(firstSelectedIndex, index);
       
-      // Check if all words in range are already selected (to toggle them off)
-      const allSelected = newTimestamps.slice(startIndex, endIndex + 1)
-        .every(ts => ts.selected);
-      
       for (let i = startIndex; i <= endIndex; i++) {
         newTimestamps[i] = {
           ...newTimestamps[i],
-          selected: !allSelected
+          selected: true
         };
       }
     } else {
-      // Single selection - toggle the clicked timestamp
-      newTimestamps[index] = {
-        ...newTimestamps[index],
-        selected: !newTimestamps[index].selected
-      };
+      // Check if we already have selected words but not using shift key
+      const hasExistingSelection = selectedWords.length > 0;
       
-      // Update first selected word based on selection state
-      if (newTimestamps[index].selected) {
-        setFirstSelectedWord(newTimestamps[index]);
+      // Check if the clicked word is already selected
+      if (hasExistingSelection && newTimestamps[index].selected) {
+        // Find the first selected word's index
+        const firstSelectedIndex = timestamps.findIndex(ts => ts.selected);
+        
+        // Deselect the clicked word and all words after it
+        if (firstSelectedIndex !== -1 && firstSelectedIndex < index) {
+          debug.log(`Deselection detected for word "${timestamp.word}" at index ${index}`);
+          
+          for (let i = index; i < newTimestamps.length; i++) {
+            newTimestamps[i] = {
+              ...newTimestamps[i],
+              selected: false
+            };
+          }
+          
+          // Keep first selected word the same since we're only trimming the selection
+        }
+      } else if (hasExistingSelection && !newTimestamps[index].selected) {
+        // User is clicking a second word (not already selected) to create a range
+        const firstSelectedIndex = timestamps.findIndex(ts => ts.selected);
+        
+        if (firstSelectedIndex !== -1 && firstSelectedIndex !== index) {
+          debug.log(`Range selection detected from index ${firstSelectedIndex} to ${index}`);
+          
+          // First, clear any existing selection
+          newTimestamps.forEach((ts, i) => {
+            newTimestamps[i] = {
+              ...ts,
+              selected: false
+            };
+          });
+          
+          // Then select the range between the first selected word and the current word
+          const startIndex = Math.min(firstSelectedIndex, index);
+          const endIndex = Math.max(firstSelectedIndex, index);
+          
+          for (let i = startIndex; i <= endIndex; i++) {
+            newTimestamps[i] = {
+              ...newTimestamps[i],
+              selected: true
+            };
+          }
+          
+          setFirstSelectedWord(newTimestamps[startIndex]);
+        } else {
+          // Always select the clicked timestamp, but never deselect
+          if (!newTimestamps[index].selected) {
+            newTimestamps[index] = {
+              ...newTimestamps[index],
+              selected: true
+            };
+            
+            // Update first selected word
+            setFirstSelectedWord(newTimestamps[index]);
+          }
+        }
       } else {
-        setFirstSelectedWord(null);
+        // Clear all other selections when making a new single selection
+        if (!event.ctrlKey && !event.metaKey) {
+          newTimestamps.forEach((ts, i) => {
+            if (i !== index) {
+              newTimestamps[i] = {
+                ...ts,
+                selected: false
+              };
+            }
+          });
+        }
+        
+        // Toggle selection for the clicked timestamp
+        newTimestamps[index] = {
+          ...newTimestamps[index],
+          selected: !newTimestamps[index].selected
+        };
+        
+        // Update first selected word if we're selecting this word
+        if (newTimestamps[index].selected) {
+          setFirstSelectedWord(newTimestamps[index]);
+        }
       }
     }
     
@@ -550,7 +645,7 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     
     // Move the playhead to the clicked position and redraw the waveform
     seek(clickedWordStart);
-  }, [timestamps, firstSelectedWord, seek, onSelectionChange, onTimestampClick, setSelectedWords]);
+  }, [timestamps, firstSelectedWord, selectedWords, seek, onSelectionChange, onTimestampClick, setSelectedWords]);
 
   // Toggle playback
   const togglePlayback = useCallback(() => {
@@ -565,12 +660,26 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
   // Clear selection
   const clearSelection = useCallback(() => {
     debug.log('Clear selection called');
+    
+    // Clear selected state on all timestamps
+    timestamps.forEach((timestamp) => {
+      timestamp.selected = false;
+    });
+    
+    // Update state
     setSelectedWords([]);
     setFirstSelectedWord(null);
+    
+    // Redraw the waveform to update visual state
+    if (audioBuffer && canvasRef.current) {
+      drawWaveform(audioBuffer, currentTime);
+    }
+    
+    // Notify parent about selection change
     if (onSelectionChange) {
       onSelectionChange(null);
     }
-  }, [onSelectionChange]);
+  }, [timestamps, onSelectionChange, audioBuffer, drawWaveform, currentTime]);
 
   // Format time for display
   const formatTime = useCallback((time: number): string => {
@@ -720,6 +829,25 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     };
   }, [getScrollIndicatorStyle]);
 
+  // Set volume
+  const setAudioVolume = useCallback((newVolume: number) => {
+    debug.log(`Setting volume to ${newVolume.toFixed(2)}`);
+    const clampedVolume = Math.min(1, Math.max(0, newVolume));
+    
+    setVolume(clampedVolume);
+    
+    if (audioRef.current) {
+      audioRef.current.volume = clampedVolume;
+    }
+  }, []);
+
+  // When audio element is created, set its initial volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [audioRef.current, volume]);
+
   // Expose the handle through useImperativeHandle
   useImperativeHandle(ref, () => ({
     play: playAudio,
@@ -737,6 +865,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
         audioRef.current.playbackRate = rate;
       }
     },
+    getVolume: () => volume,
+    setVolume: setAudioVolume,
     getAudioBuffer: async () => bufferRef.current,
     getFirstSelectedWord: () => firstSelectedWord,
     togglePlayback,
@@ -749,6 +879,8 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     playAudio, 
     pauseAudio, 
     playbackRate, 
+    volume,
+    setAudioVolume,
     seek, 
     stopAudio, 
     togglePlayback, 
@@ -770,9 +902,11 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
       {/* Timestamp boxes with navigation arrows */}
       {timestamps && timestamps.length > 0 && !readOnly && (
         <div className="timestamps-container" style={{
-          width: '100%',
+          width: 'calc(100% - 80px)',
           position: 'relative',
           marginTop: '10px',
+          marginLeft: '40px',
+          marginRight: '40px',
           borderRadius: '4px',
         }}>
           {/* Left navigation arrow */}
@@ -782,25 +916,24 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
             aria-label="Scroll left"
             style={{
               position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
+              left: '-35px',
+              top: '0',
+              height: '100%',
+              transform: 'translateY(0)',
               zIndex: 40,
-              background: 'rgba(255, 255, 255, 0.7)',
+              background: 'rgba(255, 255, 255, 0.8)',
               border: '1px solid rgba(209, 213, 219, 0.8)',
-              borderRadius: '50%',
-              width: '24px',
-              height: '24px',
+              borderRadius: '4px',
+              width: '12px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-              fontSize: '14px',
-              marginLeft: '4px'
+              fontSize: '12px'
             }}
           >
-            ←
+            ◀
           </button>
           
           {/* Right navigation arrow */}
@@ -810,25 +943,24 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
             aria-label="Scroll right"
             style={{
               position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
+              right: '-35px',
+              top: '0',
+              height: '100%',
+              transform: 'translateY(0)',
               zIndex: 40,
-              background: 'rgba(255, 255, 255, 0.7)',
+              background: 'rgba(255, 255, 255, 0.8)',
               border: '1px solid rgba(209, 213, 219, 0.8)',
-              borderRadius: '50%',
-              width: '24px',
-              height: '24px',
+              borderRadius: '4px',
+              width: '12px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-              fontSize: '14px',
-              marginRight: '4px'
+              fontSize: '12px'
             }}
           >
-            →
+            ▶
           </button>
           
           <div 
@@ -838,9 +970,10 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
               width: '100%', 
               overflowX: 'auto',
               padding: '8px 0',
-              backgroundColor: 'rgba(243, 244, 246, 0.5)',
-              borderRadius: '4px',
-              border: '1px solid rgba(209, 213, 219, 0.5)',
+              backgroundColor: '#ffffff',  // Pure white
+              borderRadius: '3px',
+              border: '1px solid #3366cc', // Medium blue border
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', // Subtle shadow for depth
               scrollbarWidth: 'none', // Hide scrollbar for Firefox
               msOverflowStyle: 'none', // Hide scrollbar for IE
             }}
