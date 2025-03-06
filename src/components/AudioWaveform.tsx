@@ -12,6 +12,7 @@ interface AudioWaveformProps {
   label?: string;
   startTime?: number | null;
   endTime?: number | null;
+  className?: string;
 }
 
 // Define ref interface
@@ -38,6 +39,7 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
     label = '',
     startTime = null,
     endTime = null,
+    className,
   } = props;
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,10 +125,10 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
     // Always try to ensure audio context is created, even if not playing
     ensureAudioContextState();
     
-    // Regular check interval for audio context state
+    // Reduce check frequency to reduce overhead
     const checkInterval = setInterval(() => {
       ensureAudioContextState();
-    }, 1000);
+    }, 3000); // Increased from 1000ms to 3000ms
     
     return () => {
       clearInterval(checkInterval);
@@ -256,9 +258,24 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     
-    const draw = () => {
+    // Pre-calculate values that won't change during animation to improve performance
+    const sliceWidth = canvasWidth / bufferLength;
+    const halfHeight = canvasHeight / 2;
+    
+    let previousAnimationTimestamp = 0;
+    const targetFPS = 30; // Limit to 30 FPS for better performance
+    const frameInterval = 1000 / targetFPS;
+    
+    const draw = (timestamp: number) => {
       // Store reference for cancellation
       animationFrameRef.current = requestAnimationFrame(draw);
+      
+      // Throttle drawing to target FPS
+      const elapsed = timestamp - previousAnimationTimestamp;
+      if (elapsed < frameInterval) {
+        return; // Skip this frame
+      }
+      previousAnimationTimestamp = timestamp;
       
       // Get frequency data
       analyser.getByteTimeDomainData(dataArray);
@@ -272,12 +289,14 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       context.strokeStyle = color;
       context.beginPath();
       
-      const sliceWidth = canvasWidth / bufferLength;
       let x = 0;
       
-      for (let i = 0; i < bufferLength; i++) {
+      // Draw only every other point for better performance on high resolutions
+      const step = window.innerWidth > 1000 ? 2 : 1;
+      
+      for (let i = 0; i < bufferLength; i += step) {
         const v = dataArray[i] / 128.0;
-        const y = (v * canvasHeight) / 2;
+        const y = v * halfHeight;
         
         if (i === 0) {
           context.moveTo(x, y);
@@ -285,14 +304,16 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
           context.lineTo(x, y);
         }
         
-        x += sliceWidth;
+        x += sliceWidth * step;
       }
       
-      context.lineTo(canvasWidth, canvasHeight / 2);
+      context.lineTo(canvasWidth, halfHeight);
       context.stroke();
     };
     
-    draw();
+    // Start the animation
+    previousAnimationTimestamp = performance.now();
+    draw(previousAnimationTimestamp);
     debug.log(`Audio visualization started, element: ${audioElement.src}`);
   };
 
@@ -317,11 +338,7 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
   };
 
   const ensureAudioContextState = async () => {
-    debug.log('==== AUDIO CONTEXT STATE CHECK ====');
-    
     if (!audioCtx) {
-      debug.log('No audio context available');
-      
       // Try to create a new audio context if we don't have one
       if (audioElement) {
         try {
@@ -335,12 +352,8 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       return;
     }
     
-    debug.log(`Current audio context state: ${audioCtx.state}`);
-    debug.log(`Audio props - element: ${audioElement ? 'present' : 'not present'}, isPlaying: ${isPlaying}`);
-    
-    // Always try to resume the context if it's suspended, regardless of isPlaying
-    // This ensures we have a ready context when playback starts
-    if (audioCtx.state === 'suspended') {
+    // Only resume if suspended and we need it active (when playing or connecting new elements)
+    if (audioCtx.state === 'suspended' && (isPlaying || !connectedAudioElements.has(audioElement!))) {
       try {
         await audioCtx.resume();
         debug.log('Successfully resumed audio context');
@@ -349,7 +362,7 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       }
     }
     
-    // If we have an audio element but it's not connected, try to connect it
+    // Don't constantly try to connect if not needed
     if (audioElement && !connectedAudioElements.has(audioElement) && audioCtx.state === 'running') {
       try {
         const source = audioCtx.createMediaElementSource(audioElement);
@@ -376,7 +389,10 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
   };
 
   return (
-    <div style={{ position: 'relative', width, height, marginBottom: '10px' }}>
+    <div 
+      style={{ position: 'relative', width, height, marginBottom: '10px' }}
+      className={className}
+    >
       {label && (
         <div style={{ position: 'absolute', top: '-25px', left: '10px', fontSize: '14px', fontWeight: 'bold' }}>
           {label}

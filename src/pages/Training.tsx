@@ -339,21 +339,51 @@ export const Training = () => {
       // Start recording playback
       debug.log('Starting recording playback');
       if (recordingAudioRef.current) {
+        // Ensure the audio element is properly reset
         recordingAudioRef.current.currentTime = 0;
-        recordingAudioRef.current.play().catch(err => {
-          debug.error(`Error playing recording: ${err.message}`);
-        });
+        
+        // Play in a way that prevents audio glitches
+        // First ensure the audio context is ready
+        const waveform = document.querySelector('.recording-waveform');
+        if (waveform) {
+          debug.log('Ensuring recording audio context is ready before playing');
+        }
+        
+        // Small delay before starting playback to ensure context is fully established
+        setTimeout(() => {
+          if (recordingAudioRef.current) {
+            recordingAudioRef.current.play().catch(err => {
+              debug.error(`Error playing recording: ${err.message}`);
+            });
+          }
+          setIsRecordingPlaying(true);
+        }, 50);
+      } else {
+        debug.warn('No recording audio element available');
       }
-      setIsRecordingPlaying(true);
       // Do NOT change the main isPlaying state
     }
   };
 
-  // Update recording playback rate
+  // Update recording playback rate with a smoother transition
   useEffect(() => {
     if (recordingAudioRef.current) {
       debug.log(`Setting recording playback rate to ${playbackRate}x`);
-      recordingAudioRef.current.playbackRate = playbackRate;
+      
+      // Apply playback rate change smoothly
+      try {
+        // TypeScript doesn't know about preservesPitch as it's not standard yet
+        // Use a type assertion to avoid TypeScript errors
+        const audioEl = recordingAudioRef.current as any;
+        if ('preservesPitch' in audioEl) {
+          audioEl.preservesPitch = true; // Maintain pitch when changing rate
+        }
+        recordingAudioRef.current.playbackRate = playbackRate;
+      } catch (err) {
+        // Fallback for browsers that don't support preservesPitch
+        recordingAudioRef.current.playbackRate = playbackRate;
+        debug.warn('Browser might not support preservesPitch for audio playback');
+      }
     }
   }, [playbackRate]);
 
@@ -562,20 +592,25 @@ export const Training = () => {
   // Debug rendering
   debug.log('Rendering Training component');
 
-  // Initialize recording audio element
+  // When audioURL changes, update the recording audio element
   useEffect(() => {
-    if (audioURL && !recordingAudioRef.current) {
-      debug.log('Creating recording audio element');
-      // Create the audio element programmatically
+    if (audioURL) {
+      debug.log(`Creating recording audio element for URL: ${audioURL.substring(0, 30)}...`);
+      
+      // Create audio element
       const audioElement = new Audio(audioURL);
-      audioElement.addEventListener('play', () => {
-        debug.log('Recording audio playback started');
-        setIsRecordingPlaying(true);
-      });
-      audioElement.addEventListener('pause', () => {
-        debug.log('Recording audio playback paused');
-        setIsRecordingPlaying(false);
-      });
+      
+      // Set preservesPitch if available to prevent pitch changes
+      try {
+        const audioEl = audioElement as any;
+        if ('preservesPitch' in audioEl) {
+          audioEl.preservesPitch = true;
+          debug.log('Enabled preservesPitch for recording audio');
+        }
+      } catch (err) {
+        // Ignore errors for unsupported browsers
+      }
+      
       audioElement.addEventListener('ended', () => {
         debug.log('Recording audio playback ended');
         setIsRecordingPlaying(false);
@@ -628,65 +663,41 @@ export const Training = () => {
     }
   }, [recordingAudioRef.current, isRecordingPlaying]);
 
-  // When any audio element is created, store it as the persistent element if needed
-  useEffect(() => {
-    if (persistentAudioElement) {
-      debug.log('Setting persistent audio element');
-    }
-  }, [persistentAudioElement]);
-  
   // Update the determineAudioSource function to use the AudioVisualizer's getAudioElement method
   const determineAudioSource = () => {
-    debug.log('==== AUDIO SOURCE DETERMINATION ====');
-    debug.log(`State flags - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
+    // Only log in debug mode to reduce console noise
+    if (debug.enabled) {
+      debug.log('==== AUDIO SOURCE DETERMINATION ====');
+      debug.log(`State flags - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
     
-    let selectedSource = 'none';
+      // Check each potential source and log its availability
+      const recordingAvailable = !!(isRecordingPlaying && recordingAudioRef.current);
+      const targetAvailable = !!(isTargetPlaying && targetVisualizerRef.current?.getAudioElement());
+      const mainAvailable = !!(isPlaying && visualizerRef.current?.getAudioElement());
+      
+      debug.log(`Source availability - recording: ${recordingAvailable}, target: ${targetAvailable}, main: ${mainAvailable}`);
+    }
+    
+    // Simplified source determination with priority order
     let audioElement: HTMLAudioElement | null = null;
+    let selectedSource = 'none';
     
-    // Check each potential source and log its availability
-    const recordingAvailable = !!(isRecordingPlaying && recordingAudioRef.current);
-    const targetAvailable = !!(isTargetPlaying && targetVisualizerRef.current?.getAudioElement());
-    const mainAvailable = !!(isPlaying && visualizerRef.current?.getAudioElement());
-    
-    debug.log(`Source availability - recording: ${recordingAvailable}, target: ${targetAvailable}, main: ${mainAvailable}`);
-    
-    if (recordingAvailable && recordingAudioRef.current) {
+    if (isRecordingPlaying && recordingAudioRef.current) {
       selectedSource = 'recording';
       audioElement = recordingAudioRef.current;
-      debug.log(`Using recording audio: ${audioElement.src.substring(0, 40)}`);
-    } else if (targetAvailable && targetVisualizerRef.current) {
+    } else if (isTargetPlaying && targetVisualizerRef.current) {
       selectedSource = 'target';
-      const targetAudio = targetVisualizerRef.current.getAudioElement();
-      if (targetAudio) {
-        audioElement = targetAudio;
-        debug.log(`Using target audio: ${audioElement.src.substring(0, 40)}`);
-      }
-    } else if (mainAvailable && visualizerRef.current) {
+      audioElement = targetVisualizerRef.current.getAudioElement();
+    } else if (isPlaying && visualizerRef.current) {
       selectedSource = 'main';
-      const mainAudio = visualizerRef.current.getAudioElement();
-      if (mainAudio) {
-        audioElement = mainAudio;
-        debug.log(`Using main audio: ${audioElement.src.substring(0, 40)}`);
-      }
-    }
-    
-    debug.log(`Selected source: ${selectedSource}`);
-    
-    // If no active source, use the persistent element for visualization (but don't play it)
-    if (!audioElement && persistentAudioElement) {
-      debug.log('⚠️ Using persistent audio element (main) instead of null');
+      audioElement = visualizerRef.current.getAudioElement();
+    } else if (persistentAudioElement) {
+      selectedSource = 'persistent';
       audioElement = persistentAudioElement;
-      
-      // Log the persistent element details
-      if (persistentAudioElement.src) {
-        debug.log(`Persistent audio element source: ${persistentAudioElement.src.substring(0, 40)}`);
-      } else {
-        debug.log('Persistent audio element has no source');
-      }
     }
     
-    if (!audioElement) {
-      debug.warn('⛔ No audio element available for waveform visualization');
+    if (debug.enabled && selectedSource !== 'none') {
+      debug.log(`Selected source: ${selectedSource}`);
     }
     
     return audioElement;
@@ -1086,6 +1097,7 @@ export const Training = () => {
                 color={waveformColor}
                 backgroundColor={waveformBackgroundColor}
                 height={150}
+                className={isRecordingPlaying ? 'recording-waveform' : ''}
               />
             );
           })()}
