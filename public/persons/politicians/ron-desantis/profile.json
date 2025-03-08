@@ -1,0 +1,35 @@
+{
+  "id": "ron-desantis",
+  "name": "Ron DeSantis",
+  "title": "Governor of Florida",
+  "summary": "Ron DeSantis has a direct speaking style with a subtle Florida accent, using concise statements and occasionally stern delivery when discussing policy positions.",
+  "bio": "Ronald Dion DeSantis is an American politician serving as the 46th governor of Florida since 2019. A member of the Republican Party, he previously represented Florida's 6th congressional district in the U.S. House of Representatives from 2013 to 2018.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Direct, matter-of-fact delivery",
+    "Subtle Florida accent",
+    "Tendency to emphasize key policy points",
+    "Concise speaking style"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Florida Leadership",
+      "description": "Speech on state governance principles",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "In Florida, we choose freedom over Faucism. We're not going to let anyone lock you down, we will not let anyone take your jobs, and we will not let anyone close your schools.",
+      "tags": ["governance", "speech"],
+      "tips": [
+        "Note his direct, straightforward delivery",
+        "Pay attention to the emphasis on key words like 'freedom' and 'not'"
+      ]
+    }
+  ]
+} 

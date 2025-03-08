@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { Home } from './pages/Home'
 import { Training } from './pages/Training'
 import { Dashboard } from './pages/Dashboard'
+import { Person } from './pages/Person'
 
 const queryClient = new QueryClient()
 
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/training" element={<Training />} />
+            <Route path="/person/:personId" element={<Person />} />
           </Routes>
         </Layout>
       </Router>

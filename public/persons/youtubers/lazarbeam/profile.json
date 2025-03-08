@@ -1,0 +1,36 @@
+{
+  "id": "lazarbeam",
+  "name": "Lazarbeam",
+  "title": "Gaming and Comedy Content Creator",
+  "summary": "Lazarbeam speaks with a distinct Australian accent, energetic and loud delivery, frequent use of catchphrases like 'Yeah, mate!' and 'Bloody legend!', and comedic exaggerations when reacting to game events.",
+  "bio": "Lannan Eacott, known online as Lazarbeam, is an Australian YouTuber and streamer best known for his Fortnite content, challenge videos, and comedic commentary. Rising from construction work to YouTube stardom, he has built a massive following with his relatable personality, Australian humor, and everyman appeal.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Strong Australian accent with distinctive slang",
+    "Energetic, often loud exclamations and reactions",
+    "Signature catchphrases with unique delivery",
+    "Exaggerated comedic tone during gameplay highlights"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Gaming Reaction",
+      "description": "Typical reaction during an intense gaming moment",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "OH MY GOD! What a bloody legend! Did you see that?! Absolutely crazy, mate! That's gotta be the most cooked thing I've ever seen in this game! Let's go, you bloody legends! CODE LAZAR IN THE ITEM SHOP!",
+      "tags": ["gaming", "australian"],
+      "tips": [
+        "Focus on his distinctive Australian pronunciation and slang",
+        "Practice his energetic, explosive reactions to gaming moments",
+        "Pay attention to how he delivers catchphrases like 'bloody legend'",
+        "Note the way he stretches certain words for comedic effect"
+      ]
+    }
+  ]
+} 

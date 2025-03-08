@@ -1,0 +1,35 @@
+{
+  "id": "vivek-ramaswamy",
+  "name": "Vivek Ramaswamy",
+  "title": "Entrepreneur and Political Commentator",
+  "summary": "Vivek Ramaswamy speaks with a rapid pace and energetic delivery, using precise vocabulary and complex sentence structures to convey his ideas about policy and business.",
+  "bio": "Vivek Ramaswamy is an American entrepreneur, author, and political commentator. He founded Roivant Sciences, a pharmaceutical company, and has written about topics including stakeholder capitalism and political ideology in America.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Quick speaking pace",
+    "Articulate pronunciation",
+    "Complex sentence structure",
+    "Energetic delivery with hand gestures"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "American Identity",
+      "description": "Discussion about American national identity",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "We need to revive a culture of American excellence and meritocracy. The question isn't what race you are, but whether you embrace our founding ideals of liberty, constitutional self-governance, and open debate.",
+      "tags": ["interview", "identity"],
+      "tips": [
+        "Focus on his rapid, articulate delivery",
+        "Pay attention to the cadence of his longer sentences"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "jacksepticeye",
+  "name": "Jacksepticeye",
+  "title": "Energetic Gaming Creator",
+  "summary": "Jacksepticeye speaks with an unmistakable Irish accent, extremely high energy, rapid delivery, and his trademark intro 'Top of the morning to ya, laddies!' His voice regularly hits high volumes with distinctive catchphrases.",
+  "bio": "Seán McLoughlin, known as Jacksepticeye, is an Irish YouTuber, gamer, and voice actor. Known for his energetic commentary, loud persona, and charitable work, he rose to prominence with his Let's Play series and collaborations with other popular creators.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinct Irish accent with unique pronunciation patterns",
+    "Extremely high energy and rapid-fire delivery",
+    "Loud, enthusiastic exclamations and catchphrases",
+    "Wide vocal range from conversational to shouting"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Signature Intro",
+      "description": "Classic Jacksepticeye intro and gameplay reaction",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "TOP OF THE MORNING TO YA, LADDIES! My name is Jacksepticeye and welcome back to [game name]! Last time we were ABSOLUTELY DESTROYED by that boss, but today we're gonna KICK ITS ASS! Let's do this! SPEED IS KEY!",
+      "tags": ["gaming", "energy"],
+      "tips": [
+        "Focus on his distinctive Irish accent and pronunciation",
+        "Practice the extreme energy and volume in his delivery",
+        "Pay attention to how he emphasizes certain syllables in words like 'ABSOLUTELY'",
+        "Master his rapid-fire delivery without losing clarity"
+      ]
+    }
+  ]
+} 

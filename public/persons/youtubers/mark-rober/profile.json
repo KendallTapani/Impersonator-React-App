@@ -1,0 +1,36 @@
+{
+  "id": "mark-rober",
+  "name": "Mark Rober",
+  "title": "Science and Engineering Creator",
+  "summary": "Mark Rober speaks with a clear, enthusiastic delivery characterized by a measured pace, precise articulation, and a teacher-like ability to explain complex concepts simply, often building to excited revelations of his engineering projects.",
+  "bio": "Mark Rober is an American YouTuber, engineer, and inventor who previously worked at NASA and Apple. His content focuses on popular science, do-it-yourself gadgets, and elaborate engineering projects that combine education with entertainment. He is known for his squirrel obstacle courses, glitter bombs against package thieves, and annual Team Seas/Trees charity events.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Clear, measured delivery with educational tone",
+    "Enthusiastic emphasis on key scientific concepts",
+    "Precise articulation with professional polish",
+    "Gradual build-up to excited reveals"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Engineering Explanation",
+      "description": "Explaining the science behind one of his inventions",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "So here's how it works. When the package is opened, this trigger activates a circuit connected to four smartphones. Each phone captures the entire reaction from different angles while simultaneously releasing a pound of fine glitter and spraying fart spray every 30 seconds. And the best part? It's all captured in 4K!",
+      "tags": ["science", "engineering"],
+      "tips": [
+        "Focus on his clear, deliberate explanations with educational tone",
+        "Practice the way he builds enthusiasm throughout explanations",
+        "Pay attention to how he emphasizes key technical details",
+        "Note how he maintains composure while expressing excitement about results"
+      ]
+    }
+  ]
+} 

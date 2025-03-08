@@ -1,0 +1,36 @@
+{
+  "id": "hillary-clinton",
+  "name": "Hillary Clinton",
+  "title": "Former Secretary of State",
+  "summary": "Hillary Clinton has a deliberate speaking style with careful pronunciation, a measured pace, and occasional emphasis through volume and pitch changes to drive home key points.",
+  "bio": "Hillary Diane Rodham Clinton is an American politician, diplomat, lawyer, writer, and public speaker who served as the 67th United States secretary of state from 2009 to 2013, as a United States senator from New York from 2001 to 2009, and as First Lady of the United States from 1993 to 2001.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Deliberate, clear pronunciation",
+    "Controlled volume and tone",
+    "Slightly formal delivery style",
+    "Emphasis through pace changes"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Women's Rights",
+      "description": "From her speech on women's rights",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Human rights are women's rights, and women's rights are human rights. Let us not forget that among those rights are the right to speak freely and the right to be heard.",
+      "tags": ["rights", "speech"],
+      "tips": [
+        "Focus on her clear, deliberate pronunciation",
+        "Pay attention to how she slows down for emphasis on key phrases",
+        "Notice the slight rising intonation at key points"
+      ]
+    }
+  ]
+} 

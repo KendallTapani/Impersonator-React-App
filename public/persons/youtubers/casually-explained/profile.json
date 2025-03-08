@@ -1,0 +1,36 @@
+{
+  "id": "casually-explained",
+  "name": "Casually Explained",
+  "title": "Educational Comedy Creator",
+  "summary": "Casually Explained speaks with a deliberately dry, monotone delivery, measured pacing with strategic pauses before punchlines, and minimal vocal fluctuation that enhances his deadpan educational comedy style.",
+  "bio": "Casually Explained is a Canadian YouTuber known for his comedic educational videos that break down complex or awkward topics using simple stick figure animations. His deadpan delivery and self-deprecating humor have earned him millions of subscribers who enjoy his unique approach to explaining everything from dating to scientific concepts.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Perfectly dry, monotone delivery with minimal inflection",
+    "Measured pace with strategic pauses before punchlines",
+    "Slightly nasal tone with Canadian accent elements",
+    "Maintains unflappable calm regardless of topic absurdity"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Dating Explanation",
+      "description": "Typical explanation of social dynamics with deadpan humor",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Dating can be understood using this simple chart. On the X-axis, we have how attracted they are to you, and on the Y-axis, we have their psychological stability. The goal is to find someone in the top right quadrant, though as you can see, I've conveniently placed myself in the bottom left.",
+      "tags": ["comedy", "education"],
+      "tips": [
+        "Focus on maintaining the perfectly flat, deadpan delivery",
+        "Pay attention to his strategic pauses before delivering the punchline",
+        "Practice the subtle Canadian accent elements in certain words",
+        "Note how he maintains the same tone regardless of whether he's explaining something scientific or making a self-deprecating joke"
+      ]
+    }
+  ]
+} 

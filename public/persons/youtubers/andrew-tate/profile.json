@@ -1,0 +1,36 @@
+{
+  "id": "andrew-tate",
+  "name": "Andrew Tate",
+  "title": "Controversial Internet Personality",
+  "summary": "Andrew Tate speaks with a distinctive transatlantic accent (mix of American and British), characterized by confident, declarative statements, forceful emphasis on key words, and a melodic rise and fall pattern when making provocative points.",
+  "bio": "Andrew Tate is a British-American internet personality, former professional kickboxer, and businessman. Known for his controversial views and luxury lifestyle content, Tate gained significant attention through podcast appearances and social media before facing legal issues and platform bans.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinctive mixed American-British accent",
+    "Forceful emphasis on key words with declarative tone",
+    "Melodic pattern with strategic pauses for impact",
+    "Confident, unwavering delivery regardless of content"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Success Mindset",
+      "description": "Typical monologue about success and masculinity",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Listen. Most men are completely lost in the matrix. They're broke, they're weak, and they're slaves to the system. I live a life most can only dream of because I understand a simple truth: the modern world is designed to keep you poor and distracted. To escape, you need discipline, focus, and a complete rejection of excuses.",
+      "tags": ["masculinity", "motivation"],
+      "tips": [
+        "Focus on his unique transatlantic accent—neither fully British nor American",
+        "Pay attention to his forceful emphasis on words like 'listen' and 'truth'",
+        "Practice his deliberate pacing with strategic pauses for impact",
+        "Note the rising intonation he uses when challenging conventional wisdom"
+      ]
+    }
+  ]
+} 

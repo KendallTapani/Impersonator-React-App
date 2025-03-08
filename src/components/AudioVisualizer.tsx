@@ -303,6 +303,10 @@ export const AudioVisualizer = forwardRef<AudioVisualizerHandle, AudioVisualizer
     // Clear the canvas
     ctx.clearRect(0, 0, displayWidth, displayHeight);
     
+    // Fill with black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+    
     // Enable higher quality rendering
     ctx.imageSmoothingEnabled = false;  // Crisp lines
     

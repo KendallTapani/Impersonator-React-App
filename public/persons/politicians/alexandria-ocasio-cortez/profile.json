@@ -1,0 +1,36 @@
+{
+  "id": "alexandria-ocasio-cortez",
+  "name": "Alexandria Ocasio-Cortez",
+  "title": "U.S. Representative from New York",
+  "summary": "Alexandria Ocasio-Cortez has an energetic, passionate speaking style with New York City inflections, rapid-fire delivery of complex policy points, and an engaging mix of formal policy language and conversational phrases.",
+  "bio": "Alexandria Ocasio-Cortez, also known by her initials AOC, is an American politician and activist. She has served as the U.S. representative for New York's 14th congressional district since 2019, as a member of the Democratic Party and the progressive movement.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Energetic, passionate delivery",
+    "New York City accent with Bronx influences",
+    "Rapid-fire speaking style for complex topics",
+    "Seamless shifts between formal and conversational language"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Economic Justice",
+      "description": "Speech on economic inequality",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "It's not enough to just say we need to address economic inequality. We need bold, transformative action to create an economy that's fair for working families. This is about justice, not just economics.",
+      "tags": ["economy", "justice"],
+      "tips": [
+        "Focus on her energetic, passionate rhythm",
+        "Pay attention to her New York City accent patterns",
+        "Notice how she connects formal policy concepts with accessible language"
+      ]
+    }
+  ]
+} 

@@ -4,7 +4,7 @@ import { useDebug } from '../hooks/useDebug';
 // Define prop interface
 interface AudioWaveformProps {
   audioElement?: HTMLAudioElement | null;
-  width?: number;
+  width?: number | string;
   height?: number;
   color?: string;
   backgroundColor?: string;
@@ -31,10 +31,10 @@ const connectedAudioElements = new Map<HTMLAudioElement, MediaElementAudioSource
 export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((props, ref) => {
   const {
     audioElement,
-    width = 800,
+    width = '100%',
     height = 200,
     color = '#4CAF50', // Default green color
-    backgroundColor = '#f8f9fa', // Default light gray background
+    backgroundColor = '#000000', // Changed from light gray to black
     isPlaying = false,
     label = '',
     startTime = null,
@@ -255,6 +255,17 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       return;
     }
     
+    // Update canvas dimensions to match its display size
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight || height;
+    
+    // Ensure the canvas buffer size matches its display size for proper rendering
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      debug.log(`Resized canvas to ${displayWidth}x${displayHeight}`);
+    }
+    
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     
@@ -284,9 +295,10 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       context.fillStyle = backgroundColor;
       context.fillRect(0, 0, canvasWidth, canvasHeight);
       
-      // Draw waveform
-      context.lineWidth = 2;
-      context.strokeStyle = color;
+      // Draw waveform with glow effect
+      // First draw a wider, semi-transparent line for the glow
+      context.lineWidth = 4;
+      context.strokeStyle = `${color}80`; // Add 50% transparency for glow
       context.beginPath();
       
       let x = 0;
@@ -294,6 +306,28 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
       // Draw only every other point for better performance on high resolutions
       const step = window.innerWidth > 1000 ? 2 : 1;
       
+      for (let i = 0; i < bufferLength; i += step) {
+        const v = dataArray[i] / 128.0;
+        const y = v * halfHeight;
+        
+        if (i === 0) {
+          context.moveTo(x, y);
+        } else {
+          context.lineTo(x, y);
+        }
+        
+        x += sliceWidth * step;
+      }
+      
+      context.lineTo(canvasWidth, halfHeight);
+      context.stroke();
+      
+      // Then draw the main, thinner, fully opaque line
+      context.lineWidth = 2.5;
+      context.strokeStyle = color;
+      context.beginPath();
+      
+      x = 0;
       for (let i = 0; i < bufferLength; i += step) {
         const v = dataArray[i] / 128.0;
         const y = v * halfHeight;
@@ -388,6 +422,46 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
     }
   };
 
+  useEffect(() => {
+    debug.log('AudioWaveform mounted');
+    
+    // Handle window resize events to adjust canvas size
+    const handleResize = () => {
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const displayWidth = canvas.clientWidth;
+        const displayHeight = canvas.clientHeight || height;
+        
+        if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+          canvas.width = displayWidth;
+          canvas.height = displayHeight;
+          debug.log(`Resized canvas on window resize to ${displayWidth}x${displayHeight}`);
+        }
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      debug.log('AudioWaveform unmounted');
+      stopVisualization();
+      window.removeEventListener('resize', handleResize);
+      
+      // Clean up audio context and connections
+      if (audioCtx) {
+        if (audioCtx.state !== 'closed') {
+          try {
+            audioCtx.close();
+          } catch (e) {
+            debug.error('Error closing audio context:', e);
+          }
+        }
+        setAudioCtx(null);
+        setAnalyser(null);
+      }
+    };
+  }, []);
+
   return (
     <div 
       style={{ position: 'relative', width, height, marginBottom: '10px' }}
@@ -398,16 +472,22 @@ export const AudioWaveform = forwardRef<AudioWaveformRef, AudioWaveformProps>((p
           {label}
         </div>
       )}
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        style={{
-          backgroundColor,
-          borderRadius: '4px',
-          display: 'block',
-        }}
-      />
+      <div style={{ width: '100%', position: 'relative', maxWidth: '100%' }}>
+        <canvas
+          ref={canvasRef}
+          width={typeof width === 'number' ? width : 800} // Fallback width for canvas sizing
+          height={height}
+          style={{
+            backgroundColor,
+            borderRadius: '4px',
+            display: 'block',
+            border: '1px solid #4CAF50', // Adding a green border to match the default waveform color
+            width: '100%', // Make canvas fill the container
+            height: `${height}px`, // Fixed height instead of auto
+            maxWidth: '100%', // Limit to container width
+          }}
+        />
+      </div>
       {startTime !== null && endTime !== null && (
         <div
           style={{
