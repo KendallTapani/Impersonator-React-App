@@ -5,22 +5,43 @@ import { Home } from './pages/Home'
 import { Training } from './pages/Training'
 import { Dashboard } from './pages/Dashboard'
 import { Person } from './pages/Person'
+import { AccessCode } from './pages/AccessCode'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { AuthProvider } from './context/AuthContext'
 
 const queryClient = new QueryClient()
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/training" element={<Training />} />
-            <Route path="/person/:personId" element={<Person />} />
-          </Routes>
-        </Layout>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <Layout>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/access" element={<AccessCode />} />
+              
+              {/* Protected routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/training" element={
+                <ProtectedRoute>
+                  <Training />
+                </ProtectedRoute>
+              } />
+              <Route path="/person/:personId" element={
+                <ProtectedRoute>
+                  <Person />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Layout>
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }
