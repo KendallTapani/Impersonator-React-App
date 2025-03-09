@@ -24,7 +24,7 @@ export function AccessHeader() {
             </Link>
             <button 
               onClick={revokeAccess}
-              className="text-sm text-gray-600 hover:text-red-600"
+              className="text-sm text-gray-600 hover:text-red-600 bg-white p-1 rounded"
             >
               Sign Out
             </button>

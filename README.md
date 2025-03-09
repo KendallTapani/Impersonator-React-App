@@ -101,7 +101,7 @@ The app is protected with an access code system. To access the dashboard and tra
 
 1. Visit the landing page
 2. Click "Access Voice Library"
-3. Enter the access code: `voice-impersonator-XB7F9R2Z`
+3. Enter the access code: `SigSauerP365Macro`
 
 The access code grants access for 30 days and is stored in localStorage.
 

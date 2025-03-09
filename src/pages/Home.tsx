@@ -479,7 +479,7 @@ export function Home() {
       {/* Testimonials Section */}
       <div className="py-16 bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+      <div className="text-center mb-12">
             <h2 className="text-3xl font-semibold mb-4">What Our Users Are Saying</h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
               With a little practice, you'll be amazing your friends with spot-on impersonations
@@ -583,7 +583,7 @@ export function Home() {
           </div>
         </div>
       </div>
-
+      
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-indigo-800 to-blue-800 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -591,13 +591,13 @@ export function Home() {
           <p className="text-lg text-blue-100 mb-8">
             Our extensive library of voice samples will help you master the art of voice impressions.
             Explore the collection and start practicing today.
-          </p>
-          <Link 
+        </p>
+        <Link 
             to="/dashboard"
             className="inline-block bg-white text-blue-700 px-8 py-4 rounded-full hover:bg-blue-50 transition-colors text-lg font-medium shadow-lg"
-          >
+        >
             Get Started Now
-          </Link>
+        </Link>
         </div>
       </div>
     </div>
