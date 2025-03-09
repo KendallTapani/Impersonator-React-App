@@ -51,7 +51,7 @@ export function AccessCode() {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 !bg-white !text-gray-800"
             placeholder="Enter your access code"
           />
         </div>
