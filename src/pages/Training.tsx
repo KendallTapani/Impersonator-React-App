@@ -68,6 +68,7 @@ export const Training = () => {
   const [isRecordingPlaying, setIsRecordingPlaying] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [isHoveringRecordButton, setIsHoveringRecordButton] = useState<boolean>(false);
+  const [recordingSaved, setRecordingSaved] = useState<boolean>(false);
   const [transcriptFile, setTranscriptFile] = useState<string>('');
   const [audioUrl, setAudioUrl] = useState<string>('');
 
@@ -94,16 +95,20 @@ export const Training = () => {
   // Add a flag to track if audio has been initialized
   const [audioInitialized, setAudioInitialized] = useState<boolean>(false);
   
-  // Add a new function to handle the volume slider drag
-  const [iOSDevice, setIOSDevice] = useState(false);
-  
-  // Add these state variables to the component
-  const [audioError, setAudioError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  
+  // Initialize logger with consistent formatting
+  const log = {
+    info: (message: string, ...args: any[]) => debug.log(message, ...args),
+    log: (message: string, ...args: any[]) => debug.log(message, ...args),
+    success: (message: string, ...args: any[]) => debug.success(message, ...args),
+    warning: (message: string, ...args: any[]) => debug.log(`⚠️ ${message}`, ...args),
+    error: (message: string, ...args: any[]) => debug.error(message, ...args),
+    track: (label: string, data: any) => debug.track(label, data),
+    warn: (message: string, ...args: any[]) => debug.log(`⚠️ ${message}`, ...args),
+  };
+
   // Load person data
   useEffect(() => {
-    debug.log(`Loading person data for: ${personId}`);
+    log.info(`Loading person data for: ${personId}`);
     const timer = createTimer('Load Person Data');
     
     // Try to fetch from politicians folder first
@@ -130,13 +135,13 @@ export const Training = () => {
       })
       .then(data => {
         setPerson(data);
-        debug.success(`Loaded person data for ${data.name}`);
+        log.success(`Loaded person data for ${data.name}`);
         timer.stop();
       })
       .catch(err => {
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
-        debug.error('Failed to load person data:', errorObj);
+        log.error('Failed to load person data:', errorObj);
         timer.stop();
       });
   }, [personId]);
@@ -147,73 +152,19 @@ export const Training = () => {
     
     const sample = person.samples.find(s => s.id === sampleId);
     if (sample) {
-      debug.log(`Setting current sample: ${sample.title}`);
+      log.info(`Setting current sample: ${sample.title}`);
       setCurrentSample(sample);
       setTranscriptFile(`${basePath}${sample.transcriptFile}`);
       setAudioUrl(`${basePath}${sample.audioFile}`);
     } else {
-      debug.error(`Sample not found: ${sampleId}`);
+      log.error(`Sample not found: ${sampleId}`);
       setError(new Error(`Sample not found: ${sampleId}`));
     }
   }, [person, sampleId, personId, basePath]);
 
-  // Add a new effect to initialize audio when audioUrl is set
-  useEffect(() => {
-    if (!audioUrl) return;
-    
-    // Create a temporary audio element to preload the audio
-    const tempAudio = new Audio(audioUrl);
-    
-    // Force audio context initialization
-    const initAudio = async () => {
-      try {
-        // Create and resume an audio context to ensure it's active
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-        }
-        
-        // Set up event listeners
-        tempAudio.addEventListener('canplaythrough', () => {
-          debug.success('Audio preloaded and ready to play');
-          setPersistentAudioElement(tempAudio);
-          setAudioInitialized(true);
-        });
-        
-        tempAudio.addEventListener('error', (e) => {
-          debug.error('Error preloading audio:', e);
-        });
-        
-        // Start loading the audio
-        tempAudio.load();
-      } catch (err) {
-        debug.error('Error initializing audio:', err);
-      }
-    };
-    
-    initAudio();
-    
-    return () => {
-      // Clean up the temporary audio element
-      tempAudio.src = '';
-    };
-  }, [audioUrl]);
-
-  // Debug current sample
-  useEffect(() => {
-    if (currentSample) {
-      debug.log('Current sample:', currentSample);
-      debug.log(`Audio URL: ${audioUrl}`);
-      debug.log(`Transcript file: ${transcriptFile}`);
-    }
-  }, [currentSample, audioUrl, transcriptFile]);
-
-  // Track component renders
-  trackRender('Training');
-
   // Explicitly initialize audio context on component mount
   useEffect(() => {
-    debug.log('Initializing audio context on component mount');
+    log.info('Initializing audio context on component mount');
     
     // Create a function to initialize the audio context
     const initAudioContext = async () => {
@@ -224,10 +175,10 @@ export const Training = () => {
         // Resume the audio context if it's suspended
         if (audioContext.state === 'suspended') {
           await audioContext.resume();
-          debug.log('Audio context resumed successfully');
+          log.info('Audio context resumed successfully');
         }
         
-        debug.success('Audio context initialized successfully');
+        log.success('Audio context initialized successfully');
         
         // Create a silent audio buffer and play it to fully activate the audio context
         const buffer = audioContext.createBuffer(1, 1, 22050);
@@ -236,9 +187,9 @@ export const Training = () => {
         source.connect(audioContext.destination);
         source.start(0);
         
-        debug.log('Played silent buffer to activate audio context');
+        log.info('Played silent buffer to activate audio context');
       } catch (err) {
-        debug.error('Error initializing audio context:', err);
+        log.error('Error initializing audio context:', err);
       }
     };
     
@@ -246,11 +197,59 @@ export const Training = () => {
     initAudioContext();
   }, []);
 
+  // Utility function for standardized audio element error handling
+  const handleAudioElementError = useCallback((e: Event, audioElement: HTMLAudioElement, errorContext: string) => {
+    const error = audioElement.error;
+    if (error) {
+      log.error(`${errorContext}: ${error.code}`);
+    } else {
+      log.log(`Audio element error triggered in ${errorContext} but no error details available`);
+    }
+  }, [log]);
+
+  // Add a new effect to initialize audio when audioUrl is set
+  useEffect(() => {
+    if (!audioUrl) return;
+    
+    // Create a temporary audio element to preload the audio
+    const tempAudio = new Audio(audioUrl);
+    
+    // Set up event listeners directly rather than creating a nested function
+    tempAudio.addEventListener('canplaythrough', () => {
+      log.success('Audio preloaded and ready to play');
+      setPersistentAudioElement(tempAudio);
+      setAudioInitialized(true);
+    });
+    
+    tempAudio.addEventListener('error', (e) => 
+      handleAudioElementError(e, tempAudio, 'Failed to preload audio'));
+    
+    // Start loading the audio
+    tempAudio.load();
+    
+    return () => {
+      // Clean up the temporary audio element
+      tempAudio.src = '';
+    };
+  }, [audioUrl, handleAudioElementError]);
+
+  // Debug current sample
+  useEffect(() => {
+    if (currentSample) {
+      log.info('Current sample:', currentSample);
+      log.info(`Audio URL: ${audioUrl}`);
+      log.info(`Transcript file: ${transcriptFile}`);
+    }
+  }, [currentSample, audioUrl, transcriptFile]);
+
+  // Track component renders
+  trackRender('Training');
+
   // Debug state changes
   useEffect(() => {
     if (!currentSelection) return;
     
-    debug.track('State', {
+    log.track('State', {
       audioDevices: audioDevices.length,
       selectedDevice,
       playbackRate,
@@ -275,25 +274,25 @@ export const Training = () => {
 
   // Load timestamps
   useEffect(() => {
-    debug.log(`Loading timestamps from CSV file: ${transcriptFile}`);
+    log.info(`Loading timestamps from CSV file: ${transcriptFile}`);
     const timer = createTimer('Load Timestamps');
     
     parseTimestampsCSV(transcriptFile)
       .then(data => {
         setTimestamps(data);
-        debug.success(`Loaded ${data.length} timestamps`);
+        log.success(`Loaded ${data.length} timestamps`);
         timer.stop();
       })
       .catch(err => {
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
-        debug.error('Failed to load timestamps:', errorObj);
+        log.error('Failed to load timestamps:', errorObj);
       });
   }, [transcriptFile]);
 
   // Load audio devices
   useEffect(() => {
-    debug.log('Loading audio input devices');
+    log.info('Loading audio input devices');
     const timer = createTimer('Load Audio Devices');
     
     async function loadDevices() {
@@ -308,20 +307,20 @@ export const Training = () => {
           }));
         
         setAudioDevices(audioInputs);
-        debug.success(`Found ${audioInputs.length} audio input devices`);
+        log.success(`Found ${audioInputs.length} audio input devices`);
         
         // Set default device
         if (audioInputs.length > 0 && !selectedDevice) {
           const defaultDevice = audioInputs[0].deviceId;
           setSelectedDevice(defaultDevice);
-          debug.log(`Set default device: ${audioInputs[0].label}`);
+          log.log(`Set default device: ${audioInputs[0].label}`);
         }
         
         timer.stop();
       } catch (err) {
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
-        debug.error('Error loading audio devices:', errorObj);
+        log.error('Error loading audio devices:', errorObj);
       }
     }
     
@@ -333,7 +332,7 @@ export const Training = () => {
   }, [selectedDevice]);
 
   const handlePlaybackRateChange = (rate: number) => {
-    debug.log(`Playback rate changed to ${rate}x`);
+    log.log(`Playback rate changed to ${rate}x`);
     setPlaybackRate(rate);
     if (visualizerRef.current) {
       visualizerRef.current.setPlaybackRate(rate);
@@ -344,7 +343,7 @@ export const Training = () => {
   };
 
   const handleSelectionChange = (selection: SelectionRange | null) => {
-    debug.log(`Selection changed: ${selection ? 
+    log.log(`Selection changed: ${selection ? 
       `${selection.words.length} words, ${selection.startTime.toFixed(2)}s - ${selection.endTime.toFixed(2)}s` : 
       'cleared'}`);
     
@@ -356,43 +355,52 @@ export const Training = () => {
     }
   };
 
-  // Play button for main sample audio
-  const handleMainPlayButton = () => {
-    debug.log('Main play button clicked');
-    debug.log(`Current state - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
-    debug.log(`Audio element status - ${visualizerRef.current?.getAudioElement() ? 'main audio exists' : 'no main audio'}`);
-    debug.log(`Audio initialized: ${audioInitialized}, Persistent audio element: ${persistentAudioElement ? 'available' : 'not available'}`);
+  // Utility function to stop all audio except for a specific source
+  const stopAllAudioExcept = useCallback((exceptSource?: 'main' | 'target' | 'recording') => {
+    // Stop target selection playback if needed
+    if (exceptSource !== 'target' && isTargetPlaying) {
+      log.log('Stopping target playback');
+      setIsTargetPlaying(false);
+      targetVisualizerRef.current?.pause();
+    }
     
-    if (isPlaying) {
-      // If currently playing, pause main audio
-      debug.log('Pausing main audio playback');
-      
-      // Try to use visualizer first, fall back to persistent audio element
+    // Stop recording playback if needed
+    if (exceptSource !== 'recording' && isRecordingPlaying) {
+      log.log('Stopping recording playback');
+      setIsRecordingPlaying(false);
+      if (recordingAudioRef.current) {
+        recordingAudioRef.current.pause();
+      }
+    }
+    
+    // Stop main audio playback if needed
+    if (exceptSource !== 'main' && isPlaying) {
+      log.log('Stopping main audio playback');
       if (visualizerRef.current?.getAudioElement()) {
         visualizerRef.current.pause();
       } else if (persistentAudioElement) {
         persistentAudioElement.pause();
       }
-      
       setIsPlaying(false);
+    }
+  }, [isTargetPlaying, isRecordingPlaying, isPlaying, targetVisualizerRef, recordingAudioRef, visualizerRef, persistentAudioElement]);
+
+  // Play button for main sample audio
+  const handleMainPlayButton = () => {
+    log.log('Main play button clicked');
+    log.log(`Current state - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
+    log.log(`Audio element status - ${visualizerRef.current?.getAudioElement() ? 'main audio exists' : 'no main audio'}`);
+    log.log(`Audio initialized: ${audioInitialized}, Persistent audio element: ${persistentAudioElement ? 'available' : 'not available'}`);
+    
+    if (isPlaying) {
+      // If currently playing, just stop main audio
+      stopAllAudioExcept();
     } else {
       // If starting playback, make sure other sources are stopped
-      if (isTargetPlaying) {
-        debug.log('Stopping target playback before starting main audio');
-        setIsTargetPlaying(false);
-        targetVisualizerRef.current?.pause();
-      }
-      
-      if (isRecordingPlaying) {
-        debug.log('Stopping recording playback before starting main audio');
-        setIsRecordingPlaying(false);
-        if (recordingAudioRef.current) {
-          recordingAudioRef.current.pause();
-        }
-      }
+      stopAllAudioExcept('main');
       
       // Start main audio playback
-      debug.log('Starting main audio playback');
+      log.log('Starting main audio playback');
       
       // Try to use visualizer first
       const mainAudio = visualizerRef.current?.getAudioElement();
@@ -400,7 +408,7 @@ export const Training = () => {
       if (mainAudio) {
         // If main audio has ended, reset it to the beginning
         if (mainAudio.ended) {
-          debug.log('Main audio was at end, resetting to beginning');
+          log.log('Main audio was at end, resetting to beginning');
           mainAudio.currentTime = 0;
         }
         
@@ -410,7 +418,7 @@ export const Training = () => {
       } 
       // Fall back to persistent audio element if visualizer isn't ready
       else if (persistentAudioElement && audioInitialized) {
-        debug.log('Using persistent audio element for playback');
+        log.log('Using persistent audio element for playback');
         
         // Reset to beginning if needed
         if (persistentAudioElement.ended) {
@@ -420,59 +428,52 @@ export const Training = () => {
         // Play the persistent audio element directly
         persistentAudioElement.play()
           .then(() => {
-            debug.success('Started playback using persistent audio element');
+            log.success('Started playback using persistent audio element');
             setIsPlaying(true);
           })
           .catch(err => {
-            debug.error('Error playing persistent audio:', err);
+            log.error('Error playing persistent audio:', err);
           });
       } else {
-        debug.error('No audio element available for playback');
+        log.error('No audio element available for playback');
       }
     }
   };
 
   // Handle target audio play button click
   const handleTargetPlayButton = () => {
-    debug.log('Target play button clicked');
+    log.log('Target play button clicked');
     
     if (isTargetPlaying) {
       // If already playing, just pause the playback
-      debug.log('Stopping target playback');
-      targetVisualizerRef.current?.pause();
-      setIsTargetPlaying(false);
+      stopAllAudioExcept();
     } else {
-      debug.log('Starting target playback');
+      // If starting playback, make sure other sources are stopped
+      stopAllAudioExcept('target');
       
-      // If recording is playing, stop it
-      if (isRecordingPlaying) {
-        debug.log('Stopping recording playback before playing target audio');
-        setIsRecordingPlaying(false);
-        if (recordingAudioRef.current) {
-          recordingAudioRef.current.pause();
-        }
-      }
+      log.log('Starting target playback');
       
       if (currentSelection && targetVisualizerRef.current) {
         // If we're at the end of the selection, reset to the beginning
         if (selectionPlayheadTime >= currentSelection.endTime - 0.1) {
-          debug.log('Resetting selection playhead to start for replay');
+          log.log('Resetting selection playhead to start for replay');
           setSelectionPlayheadTime(currentSelection.startTime);
         }
         
-        // Set up tracking variables
+        // Start playback from current selection playhead position
+        targetVisualizerRef.current.seek(selectionPlayheadTime);
+        targetVisualizerRef.current.play();
+        
+        // Store the starting position for animation tracking
         playheadStartPositionRef.current = selectionPlayheadTime;
         playbackStartTimeRef.current = performance.now();
         
-        // Seek to the current selection start time and play
-        targetVisualizerRef.current.seek(selectionPlayheadTime);
-        targetVisualizerRef.current.play();
+        // Set playing state - but ONLY for the target
         setIsTargetPlaying(true);
         
-        // Don't change the main isPlaying state
         // Just make sure audio context is maintained separately
       } else {
-        debug.warn('Cannot play target: No selection or visualizer reference');
+        log.warn('Cannot play target: No selection or visualizer reference');
       }
     }
   };
@@ -480,7 +481,7 @@ export const Training = () => {
   // Set crosshair position based on current selection
   useEffect(() => {
     if (currentSelection && !isTargetPlaying) {
-      debug.log(`Setting crosshair to start position: ${currentSelection.startTime.toFixed(2)}s`);
+      log.log(`Setting crosshair to start position: ${currentSelection.startTime.toFixed(2)}s`);
       setSelectionPlayheadTime(currentSelection.startTime);
     }
   }, [currentSelection, isTargetPlaying]);
@@ -491,7 +492,7 @@ export const Training = () => {
       return;
     }
     
-    debug.log(`Starting target audio tracking from ${playheadStartPositionRef.current.toFixed(2)}s`);
+    log.log(`Starting target audio tracking from ${playheadStartPositionRef.current.toFixed(2)}s`);
     
     // Track playback position using performance.now() for accuracy
     const startTime = playbackStartTimeRef.current;
@@ -508,7 +509,7 @@ export const Training = () => {
       
       // Debug log for tracking (but not too frequently)
       if (Math.round(currentPosition * 10) % 10 === 0) {
-        debug.log(`Target playback position: ${currentPosition.toFixed(2)}s / ${endTime.toFixed(2)}s`);
+        log.log(`Target playback position: ${currentPosition.toFixed(2)}s / ${endTime.toFixed(2)}s`);
       }
       
       // Update playhead position
@@ -516,7 +517,7 @@ export const Training = () => {
       
       // Check if we've reached the end of the selection
       if (currentPosition >= endTime - 0.01) {
-        debug.log(`Reached end of selection (${endTime.toFixed(2)}s), stopping playback`);
+        log.log(`Reached end of selection (${endTime.toFixed(2)}s), stopping playback`);
         
         // Set to exact end position before stopping
         setSelectionPlayheadTime(endTime);
@@ -527,7 +528,7 @@ export const Training = () => {
           targetAudio.pause();
           
           // ONLY update the target playing state, not the main playing state
-          debug.log('Target playback ended - NOT affecting main audio state');
+          log.log('Target playback ended - NOT affecting main audio state');
           setIsTargetPlaying(false);
         }
         
@@ -536,168 +537,102 @@ export const Training = () => {
     }, 16); // ~60fps updates
     
     return () => {
-      debug.log('Cleaning up target audio tracking');
+      log.log('Cleaning up target audio tracking');
       clearInterval(interval);
     };
   }, [isTargetPlaying, currentSelection, playbackRate, targetVisualizerRef]);
 
-  // Add iOS detection in useEffect
-  useEffect(() => {
-    // Detect iOS device
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    setIOSDevice(isIOS);
-    
-    if (isIOS) {
-      console.log('iOS device detected, special handling enabled');
-    }
-  }, []);
-
-  // Add a debug logging function that shows on screen for iOS testing
-  const logDebug = (message: string) => {
-    console.log(message);
-    setDebugInfo(prev => [message, ...prev.slice(0, 9)]); // Keep last 10 messages
-  };
-
-  // Updated handleRecordingPlayback with more robust iOS handling
+  // Updated handleRecordingPlayback with simplified error handling
   const handleRecordingPlayback = () => {
-    // Reset any previous errors
-    setAudioError(null);
-    
     if (!audioURL) {
-      setAudioError("No recording available to play");
-      logDebug('Error: No recording available');
+      log.log('No recording available to play');
       return;
     }
     
     if (isRecordingPlaying) {
       // Stop playback
-      logDebug('Stopping recording playback');
-      if (recordingAudioRef.current) {
-        recordingAudioRef.current.pause();
-      }
-      setIsRecordingPlaying(false);
+      stopAllAudioExcept();
     } else {
-      // Start playback with special focus on iOS compatibility
-      logDebug(`Attempting to play recording: ${audioURL.substring(0, 20)}...`);
+      // If starting playback, make sure other sources are stopped
+      stopAllAudioExcept('recording');
       
-      // Special fix for iOS
-      if (isIOS) {
-        try {
-          // The key fix: Create an audio element the iOS-friendly way
-          const audioElement = new Audio();
+      // Start playback with special focus on iOS compatibility
+      log.log(`Attempting to play recording`);
+      
+      try {
+        let audioElement: HTMLAudioElement;
+        
+        // Special fix for iOS
+        if (isIOS) {
+          // Create an audio element the iOS-friendly way
+          audioElement = new Audio();
           
           // Set source AFTER attaching event listeners for iOS
           audioElement.addEventListener('canplay', () => {
-            logDebug('Audio can play event fired');
+            log.log('Audio can play event fired');
             
-            // iOS requires play to be called directly from a user event handler
-            // or very soon after, so we play immediately when canplay fires
+            // iOS requires play to be called from a user event handler
             const playPromise = audioElement.play();
-            logDebug('Play triggered from canplay event');
             
             if (playPromise !== undefined) {
               playPromise.then(() => {
-                logDebug('Play promise resolved - playback started');
+                log.log('Play promise resolved - playback started');
                 setIsRecordingPlaying(true);
               }).catch(err => {
-                const msg = `iOS play failed in canplay handler: ${err.message}`;
-                logDebug(msg);
-                setAudioError(msg);
+                log.error(`iOS play failed: ${err.message}`);
+                setIsRecordingPlaying(false);
               });
             }
           });
-          
-          audioElement.addEventListener('playing', () => {
-            logDebug('Audio playing event fired');
-            setIsRecordingPlaying(true);
-          });
-          
-          audioElement.addEventListener('ended', () => {
-            logDebug('Audio ended event fired');
-            setIsRecordingPlaying(false);
-          });
-          
-          audioElement.addEventListener('error', (e) => {
-            const error = audioElement.error;
-            const errorCode = error ? error.code : 'unknown';
-            const errorMessage = `Audio error: ${errorCode}`;
-            logDebug(errorMessage);
-            
-            // Provide more detailed error messages based on error code
-            switch(errorCode) {
-              case 1: 
-                setAudioError("Media download error - check your connection");
-                break;
-              case 2:
-                setAudioError("Network error during playback");
-                break;
-              case 3:
-                setAudioError("Audio decoding error - recording may be corrupted");
-                break;
-              case 4:
-                setAudioError("Audio format not supported by iOS - try recording again");
-                break;
-              default:
-                setAudioError(errorMessage);
-            }
-            
-            setIsRecordingPlaying(false);
-          });
-          
-          // For iOS, explicitly set these properties
-          audioElement.controls = false;
-          audioElement.volume = volume;
-          audioElement.preload = 'auto';
-          
-          // CRITICAL: Set source AFTER event listeners for iOS
-          audioElement.src = audioURL;
-          
-          // CRITICAL: Force load before play for iOS
-          audioElement.load();
-          logDebug('Audio element created and loaded');
-          
-          // Store reference for pause/stop functionality
-          recordingAudioRef.current = audioElement;
-          
-        } catch (err) {
-          const errorMessage = `iOS audio setup error: ${err instanceof Error ? err.message : 'Unknown'}`;
-          logDebug(errorMessage);
-          setAudioError(errorMessage);
+        } else {
+          // Non-iOS approach (simpler)
+          audioElement = new Audio(audioURL);
         }
-      } else {
-        // Non-iOS approach (simpler)
-        try {
-          const audioElement = new Audio(audioURL);
-          audioElement.volume = volume; 
+        
+        // Common event listeners for both iOS and non-iOS
+        audioElement.addEventListener('playing', () => {
+          setIsRecordingPlaying(true);
+        });
+        
+        audioElement.addEventListener('ended', () => {
+          setIsRecordingPlaying(false);
+        });
+        
+        audioElement.addEventListener('error', (e) => 
+          handleAudioElementError(e, audioElement, 'Recording playback error'));
+        
+        // Common properties
+        audioElement.volume = volume;
+        audioElement.controls = false;
+        audioElement.preload = 'auto';
+        
+        // For iOS, set source after listeners
+        if (isIOS) {
+          audioElement.src = audioURL;
+          audioElement.load();
+        } else {
+          // For non-iOS, we can play directly
           const playPromise = audioElement.play();
           
           if (playPromise !== undefined) {
             playPromise
               .then(() => {
-                logDebug('Play promise resolved successfully');
                 setIsRecordingPlaying(true);
               })
               .catch(err => {
-                logDebug(`Play error: ${err.message || 'Unknown'}`);
+                log.error(`Play error: ${err.message}`);
                 setIsRecordingPlaying(false);
               });
           } else {
             setIsRecordingPlaying(true);
           }
-          
-          // Event listeners
-          audioElement.addEventListener('ended', () => {
-            logDebug('Audio ended');
-            setIsRecordingPlaying(false);
-          });
-          
-          // Store reference
-          recordingAudioRef.current = audioElement;
-          
-        } catch (err) {
-          logDebug(`Audio error: ${err instanceof Error ? err.message : 'Unknown'}`);
-          setAudioError(`Playback error: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
+        
+        // Store reference for pause/stop functionality
+        recordingAudioRef.current = audioElement;
+      } catch (err) {
+        log.error(`Audio error: ${err instanceof Error ? err.message : 'Unknown'}`);
+        setError(err instanceof Error ? err : new Error("Playback error"));
       }
     }
   };
@@ -705,7 +640,7 @@ export const Training = () => {
   // Update recording playback rate with a smoother transition
   useEffect(() => {
     if (recordingAudioRef.current) {
-      console.log(`Setting recording playback rate to ${playbackRate}x`);
+      log.log(`Setting recording playback rate to ${playbackRate}x`);
       
       // Apply playback rate change smoothly
       try {
@@ -719,7 +654,7 @@ export const Training = () => {
       } catch (err) {
         // Fallback for browsers that don't support preservesPitch
         recordingAudioRef.current.playbackRate = playbackRate;
-        console.warn('Browser might not support preservesPitch for audio playback');
+        log.warn('Browser might not support preservesPitch for audio playback');
       }
     }
   }, [playbackRate]);
@@ -744,17 +679,17 @@ export const Training = () => {
       position = 100;
     }
     
-    console.log(`Playhead position: ${position.toFixed(1)}% (${time.toFixed(2)}s / ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s)`);
+    log.log(`Playhead position: ${position.toFixed(1)}% (${time.toFixed(2)}s / ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s)`);
     
     return position;
   };
 
   // Handle word click in target visualizer
   const handleWordClick = (timestamp: TimeStamp, index: number) => {
-    console.log(`Word clicked in target visualizer: "${timestamp.word}" at ${timestamp.start.toFixed(2)}s (index ${index})`);
+    log.log(`Word clicked in target visualizer: "${timestamp.word}" at ${timestamp.start.toFixed(2)}s (index ${index})`);
     
     if (isTargetPlaying) {
-      console.log('Stopping playback before seeking');
+      log.log('Stopping playback before seeking');
       setIsTargetPlaying(false);
     }
     
@@ -770,17 +705,17 @@ export const Training = () => {
   useEffect(() => {
     // Add a small delay to ensure the DOM is ready
     const timer = setTimeout(() => {
-      console.log('Refreshing audio visualizers');
+      log.log('Refreshing audio visualizers');
       
       // Force refresh main visualizer
       if (visualizerRef.current) {
-        console.log('Refreshing main visualizer');
+        log.log('Refreshing main visualizer');
         visualizerRef.current.seek(0);
       }
       
       // Force refresh target visualizer if there's a selection
       if (targetVisualizerRef.current && currentSelection) {
-        console.log('Refreshing target visualizer');
+        log.log('Refreshing target visualizer');
         targetVisualizerRef.current.seek(currentSelection.startTime);
         setSelectionPlayheadTime(currentSelection.startTime);
       }
@@ -792,37 +727,39 @@ export const Training = () => {
   // Debug function to test audio files
   const testAudioFiles = useCallback(() => {
     if (!audioUrl || !transcriptFile) {
-      console.error('No audio URL or transcript file set yet');
+      // Don't log an error, just return silently since this is expected during initialization
       return;
     }
     
-    console.log('Testing audio file access...');
+    log.log('Testing audio file access...');
     
     // Test main audio file
     const mainAudioTest = new Audio(audioUrl);
     mainAudioTest.addEventListener('canplaythrough', () => {
-      console.log('Main audio file loaded successfully');
-    });
-    mainAudioTest.addEventListener('error', (e) => {
-      console.error('Error loading main audio file:', e);
+      log.log('Main audio file loaded successfully');
     });
     
-    // Test CSV file
+    // Use the standardized error handling
+    mainAudioTest.addEventListener('error', (e) => 
+      handleAudioElementError(e, mainAudioTest, 'Error loading main audio file'));
+    
+    // Test CSV file - use existing parseTimestampsCSV which already has error handling
     fetch(transcriptFile)
       .then(response => {
-        if (!response.ok) {
+        if (response.ok) {
+          log.log('Transcript file loaded successfully');
+          return response.text();
+        } else {
           throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
         }
-        console.log('Transcript file loaded successfully');
-        return response.text();
       })
-      .then(data => {
-        console.log(`Received ${data.length} bytes of text data`);
+      .then(text => {
+        log.log(`Received ${text.length} bytes of text data`);
       })
-      .catch(error => {
-        console.error('Error loading transcript file:', error);
+      .catch(err => {
+        log.error('Error loading transcript file:', err);
       });
-  }, [audioUrl, transcriptFile]);
+  }, [audioUrl, transcriptFile, handleAudioElementError]);
   
   // Run the test on initial load
   useEffect(() => {
@@ -831,7 +768,7 @@ export const Training = () => {
 
   // Handle volume change 
   const handleVolumeChange = (newVolume: number) => {
-    console.log(`Volume changed to ${newVolume.toFixed(2)}`);
+    log.log(`Volume changed to ${newVolume.toFixed(2)}`);
     
     setVolume(newVolume);
     
@@ -891,13 +828,13 @@ export const Training = () => {
 
   // Toggle volume slider visibility
   const toggleVolumeSlider = useCallback(() => {
-    console.log('Toggling volume slider');
+    log.log('Toggling volume slider');
     setShowVolumeSlider(prev => !prev);
   }, []);
 
   // Toggle playback rate menu visibility
   const togglePlaybackRateMenu = useCallback(() => {
-    console.log('Toggling playback rate menu');
+    log.log('Toggling playback rate menu');
     setShowPlaybackRateMenu(prev => !prev);
   }, []);
 
@@ -909,7 +846,7 @@ export const Training = () => {
         !volumeControlRef.current.contains(event.target as Node) &&
         showVolumeSlider
       ) {
-        console.log('Closing volume slider');
+        log.log('Closing volume slider');
         setShowVolumeSlider(false);
       }
 
@@ -918,7 +855,7 @@ export const Training = () => {
         !playbackRateControlRef.current.contains(event.target as Node) &&
         showPlaybackRateMenu
       ) {
-        console.log('Closing playback rate menu');
+        log.log('Closing playback rate menu');
         setShowPlaybackRateMenu(false);
       }
     }
@@ -932,17 +869,17 @@ export const Training = () => {
   // Debug helper for audio elements
   useEffect(() => {
     if (recordingAudioRef.current) {
-      console.log('Recording audio element available');
+      log.log('Recording audio element available');
     }
   }, [recordingAudioRef.current, audioURL]);
 
   // Debug rendering
-  console.log('Rendering Training component');
+  log.log('Rendering Training component');
 
   // When audioURL changes, update the recording audio element
   useEffect(() => {
     if (audioURL) {
-      console.log(`Creating recording audio element for URL: ${audioURL.substring(0, 30)}...`);
+      log.log(`Creating recording audio element for URL: ${audioURL.substring(0, 30)}...`);
       
       // Create audio element
       try {
@@ -959,7 +896,7 @@ export const Training = () => {
         try {
           if ('preservesPitch' in audioEl) {
             audioEl.preservesPitch = true;
-            console.log('Enabled preservesPitch for recording audio');
+            log.log('Enabled preservesPitch for recording audio');
           }
         } catch (err) {
           // Ignore errors for browsers that don't support this
@@ -967,21 +904,28 @@ export const Training = () => {
         
         // Set up event listeners for better cross-device compatibility
         audioEl.addEventListener('ended', () => {
-          console.log('Recording audio playback ended');
+          log.log('Recording audio playback ended');
           setIsRecordingPlaying(false);
         });
         
         audioEl.addEventListener('canplaythrough', () => {
-          console.log('Recording audio can play through');
+          log.log('Recording audio can play through');
         });
         
         audioEl.addEventListener('error', (e) => {
-          console.error('Recording audio error:', e);
+          const error = audioEl.error;
+          // Handle SyntheticBaseEvent by checking if error exists
+          if (error) {
+            log.error(`Audio error: ${error.code}`);
+          } else {
+            // Don't log errors for SyntheticBaseEvents without actual error data
+            log.log('Audio element error event triggered but no error details available');
+          }
           setIsRecordingPlaying(false);
         });
         
         // Handle iOS specific needs
-        if (iOSDevice) {
+        if (isIOS) {
           // iOS sometimes needs a user gesture to enable audio
           // We'll preload the audio to improve playback responsiveness
           audioEl.preload = 'auto';
@@ -993,39 +937,39 @@ export const Training = () => {
         // Update ref
         recordingAudioRef.current = audioEl;
         
-        console.log(`Recording audio element created: ${audioURL.substring(0, 30)}...`);
+        log.log(`Recording audio element created: ${audioURL.substring(0, 30)}...`);
       } catch (error) {
-        console.error('Error creating audio element:', error);
+        log.error('Error creating audio element:', error);
         recordingAudioRef.current = null;
       }
     } else if (!audioURL && recordingAudioRef.current) {
-      console.log('Cleaning up recording audio element');
+      log.log('Cleaning up recording audio element');
       // Clean up previous audio
       recordingAudioRef.current = null;
     }
-  }, [audioURL, volume, playbackRate, iOSDevice]);
+  }, [audioURL, volume, playbackRate, isIOS]);
 
   // Update the useEffect that handles recording ended event
   useEffect(() => {
     if (recordingAudioRef.current) {
       const handleEnded = () => {
-        console.log('Recording playback ended');
-        console.log(`Current state - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
+        log.log('Recording playback ended');
+        log.log(`Current state - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
         
         // Only set the recording playing flag to false
         // Do NOT affect the main audio isPlaying state
         setIsRecordingPlaying(false);
         
-        console.log('Recording playback ended - main audio state remains unchanged');
+        log.log('Recording playback ended - main audio state remains unchanged');
       };
       
       recordingAudioRef.current.addEventListener('ended', handleEnded);
-      console.log('Adding ended listener to recording audio element');
+      log.log('Adding ended listener to recording audio element');
       
       return () => {
         if (recordingAudioRef.current) {
           recordingAudioRef.current.removeEventListener('ended', handleEnded);
-          console.log('Removing ended listener from recording audio element');
+          log.log('Removing ended listener from recording audio element');
         }
       };
     }
@@ -1033,8 +977,8 @@ export const Training = () => {
 
   // Determine which audio source to use for visualization
   const determineAudioSource = () => {
-    console.log('==== AUDIO SOURCE DETERMINATION ====');
-    console.log(`State flags - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
+    log.log('==== AUDIO SOURCE DETERMINATION ====');
+    log.log(`State flags - isPlaying: ${isPlaying}, isTargetPlaying: ${isTargetPlaying}, isRecordingPlaying: ${isRecordingPlaying}`);
     
     let selectedSource = 'none';
     let audioElement: HTMLAudioElement | null = null;
@@ -1043,71 +987,75 @@ export const Training = () => {
     const recordingAvailable = !!(isRecordingPlaying && recordingAudioRef.current);
     
     // Check if target selection is available and playing
-    const targetAvailable = !!(isTargetPlaying && targetVisualizerRef.current?.getAudioElement());
+    const targetAudioElement = targetVisualizerRef.current?.getAudioElement();
+    const targetAvailable = !!(isTargetPlaying && targetAudioElement);
     
     // Check if main audio is available and playing
-    const mainAvailable = !!(isPlaying && visualizerRef.current?.getAudioElement());
+    const mainAudioElement = visualizerRef.current?.getAudioElement();
+    const mainAvailable = !!(isPlaying && mainAudioElement);
     
-    console.log(`Source availability - recording: ${recordingAvailable}, target: ${targetAvailable}, main: ${mainAvailable}, persistent: ${!!persistentAudioElement && audioInitialized}`);
+    // Check if persistent audio is available
+    const persistentAvailable = !!(persistentAudioElement && audioInitialized);
     
-    // Determine which source to use based on priority
+    log.log(`Source availability - recording: ${recordingAvailable}, target: ${targetAvailable}, main: ${mainAvailable}, persistent: ${persistentAvailable}`);
+    
+    // Priority: recording > target > main
     if (recordingAvailable) {
       selectedSource = 'recording';
       audioElement = recordingAudioRef.current;
-    } else if (targetAvailable) {
+    } else if (targetAvailable && targetAudioElement) {
       selectedSource = 'target';
-      audioElement = targetVisualizerRef.current?.getAudioElement() || null;
-    } else if (mainAvailable) {
+      audioElement = targetAudioElement;
+    } else if (mainAvailable && mainAudioElement) {
       selectedSource = 'main';
-      audioElement = visualizerRef.current?.getAudioElement() || null;
-    } else if (persistentAudioElement && audioInitialized) {
+      audioElement = mainAudioElement;
+    } else if (persistentAvailable) {
       selectedSource = 'persistent';
       audioElement = persistentAudioElement;
     }
     
     if (selectedSource !== 'none') {
-      console.log(`Selected source: ${selectedSource}`);
+      log.log(`Selected source: ${selectedSource}`);
     }
     
-    return audioElement;
+    return { source: selectedSource, element: audioElement };
   };
   
   // Update the useEffect to set up the persistent audio element when component mounts
   useEffect(() => {
-    // Set up persistent audio element from the main visualizer
-    const mainAudio = visualizerRef.current?.getAudioElement();
-    
-    if (mainAudio) {
-      if (!persistentAudioElement) {
-        console.log('Setting main audio as persistent audio element for the first time');
-        setPersistentAudioElement(mainAudio);
-      } else if (persistentAudioElement !== mainAudio) {
-        console.log('Updating persistent audio element reference');
-        setPersistentAudioElement(mainAudio);
-      } else {
-        console.log('Persistent audio element already set and up to date');
-      }
-    } else {
-      console.log('Main audio element not available yet for persistent reference');
+    // Update persistent audio element reference when visualizer audio element changes
+    const updatePersistentAudio = () => {
+      const mainAudio = visualizerRef.current?.getAudioElement();
       
-      // Schedule a retry after a short delay
-      const retryTimer = setTimeout(() => {
-        const retryAudio = visualizerRef.current?.getAudioElement();
-        if (retryAudio && !persistentAudioElement) {
-          console.log('Setting persistent audio element after retry');
-          setPersistentAudioElement(retryAudio);
+      if (mainAudio) {
+        if (!persistentAudioElement) {
+          log.log('Setting main audio as persistent audio element for the first time');
+          setPersistentAudioElement(mainAudio);
+        } else if (persistentAudioElement !== mainAudio) {
+          log.log('Updating persistent audio element reference');
+          setPersistentAudioElement(mainAudio);
+        } else {
+          log.log('Persistent audio element already set and up to date');
         }
-      }, 500);
-      
-      return () => clearTimeout(retryTimer);
-    }
-  }, [visualizerRef.current, audioURL]);
+      }
+    };
+    
+    // Initial setup
+    updatePersistentAudio();
+    
+    // Set up an interval to periodically check and update
+    const interval = setInterval(updatePersistentAudio, 2000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, [persistentAudioElement, visualizerRef]);
 
   // Fix the handleTargetReachedEnd function
   const handleTargetReachedEnd = () => {
     if (!currentSelection) return;
     
-    console.log(`Reached end of selection (${currentSelection.endTime.toFixed(2)}s), stopping playback`);
+    log.log(`Reached end of selection (${currentSelection.endTime.toFixed(2)}s), stopping playback`);
     
     // Just stop the target playback without affecting main audio
     const targetAudio = targetVisualizerRef.current?.getAudioElement();
@@ -1115,7 +1063,7 @@ export const Training = () => {
       targetAudio.pause();
       
       // Update the target playing state only
-      console.log('✅ Target playback ended - keeping this independent from main audio');
+      log.log('✅ Target playback ended - keeping this independent from main audio');
       setIsTargetPlaying(false);
     }
   };
@@ -1148,35 +1096,33 @@ export const Training = () => {
     };
   }, []);
 
-  // Add these wrapper functions to add debugging to the imported recording functions
-  const startRecordingWithDebug = async () => {
-    setAudioError(null);
-    logDebug(`Starting recording with device: ${selectedDevice}`);
-    
+  // Recording control functions with clear names
+  const handleStartRecording = async () => {
     if (!selectedDevice) {
-      setAudioError('Please select a microphone before recording');
-      logDebug('No microphone selected');
+      setError(new Error('Please select a microphone before recording'));
       return;
     }
     
     try {
-      // Call the original startRecording function
       await startRecording();
-      logDebug('Recording started successfully');
     } catch (err) {
-      const errorMessage = `Recording error: ${err instanceof Error ? err.message : 'Unknown error'}`;
-      logDebug(errorMessage);
-      setAudioError(errorMessage);
+      setError(err instanceof Error ? err : new Error("Recording failed"));
     }
   };
   
-  const stopRecordingWithDebug = () => {
-    logDebug('Stopping recording');
+  const handleStopRecording = () => {
     stopRecording();
     
-    // On iOS, we'll explicitly clear the audio ref after stopping
-    if (iOSDevice && recordingAudioRef.current) {
-      logDebug('Clearing recording audio ref for iOS');
+    // Show recording saved notification
+    setRecordingSaved(true);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setRecordingSaved(false);
+    }, 3000);
+    
+    // On iOS, we need special cleanup
+    if (isIOS && recordingAudioRef.current) {
       setTimeout(() => {
         recordingAudioRef.current = null;
       }, 100);
@@ -1273,7 +1219,7 @@ export const Training = () => {
               // This is called when the main audio playing state changes
               // Only update the main isPlaying state
               if (isPlaying !== playing) {
-                console.log(`Main audio playing state changed to: ${playing}`);
+                log.log(`Main audio playing state changed to: ${playing}`);
                 setIsPlaying(playing);
               }
             }}
@@ -1310,7 +1256,7 @@ export const Training = () => {
               className={`px-3 py-2 rounded text-sm ${currentSelection ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
               onClick={() => {
                 if (visualizerRef.current && currentSelection) {
-                  console.log('Clearing word selection');
+                  log.log('Clearing word selection');
                   
                   // Clear selection in both visualizers
                   visualizerRef.current.clearSelection();
@@ -1507,7 +1453,7 @@ export const Training = () => {
           {/* Render the waveform component with explicit element determination */}
           {(() => {
             // Determine which audio element to use
-            const audioElement = determineAudioSource();
+            const { source, element } = determineAudioSource();
             
             // Determine if audio is playing
             const isAudioPlaying = isTargetPlaying || isRecordingPlaying || isPlaying;
@@ -1526,7 +1472,7 @@ export const Training = () => {
             
             return (
               <AudioWaveform 
-                audioElement={audioElement}
+                audioElement={element}
                 isPlaying={isAudioPlaying}
                 color={waveformColor}
                 backgroundColor={waveformBackgroundColor}
@@ -1547,11 +1493,11 @@ export const Training = () => {
                         <button
                 className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-lg transition-colors w-52`}
                           onClick={() => {
-                  console.log(`Record button clicked, current state: ${isRecording ? 'recording' : 'not recording'}`);
+                  log.log(`Record button clicked, current state: ${isRecording ? 'recording' : 'not recording'}`);
                   if (isRecording) {
-                    stopRecordingWithDebug();
+                    handleStopRecording();
                   } else {
-                    startRecordingWithDebug();
+                    handleStartRecording();
                   }
                 }}
               >
@@ -1564,13 +1510,25 @@ export const Training = () => {
                   <div className="relative">
                     <div className="w-3 h-3 bg-red-600 rounded-full"></div>
                     <div className="absolute top-0 left-0 w-3 h-3 bg-red-600 rounded-full animate-ping recording-indicator-pulse opacity-75"></div>
-                    </div>
-                  <span className="ml-2 text-sm text-red-600 font-medium">Recording</span>
                   </div>
-                )}
-              </div>
+                  <span className="ml-2 text-sm text-red-600 font-medium">Recording</span>
+                </div>
+              )}
+              
+              {/* Recording saved notification */}
+              {recordingSaved && (
+                <div className="ml-3 flex items-center animate-fadeIn">
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-3 py-1 rounded-md shadow-sm flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium text-sm">Recording saved!</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
         
         {/* Selected audio transcript section removed as requested */}
         
@@ -1586,7 +1544,7 @@ export const Training = () => {
               className="border rounded p-2 bg-white text-gray-800"
               value={selectedDevice}
               onChange={(e) => {
-                console.log(`Microphone changed to ${e.target.value}`);
+                log.log(`Microphone changed to ${e.target.value}`);
                 setSelectedDevice(e.target.value);
               }}
             >
@@ -1599,120 +1557,8 @@ export const Training = () => {
           </label>
             </div>
           </div>
-      
-      {/* Recording section */}
-      <div className="bg-white shadow-sm rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Recording Controls</h3>
+
           
-          {/* iOS Debug Panel - Only show on iOS or when there are errors */}
-          {(iOSDevice || audioError) && (
-            <div className="ml-4 text-xs text-right">
-              <button 
-                onClick={() => setDebugInfo([])}
-                className="text-gray-500 hover:text-gray-700 text-xs mb-1"
-              >
-                Clear Log
-              </button>
-            </div>
-          )}
-        </div>
-        
-        {/* Error message display */}
-        {audioError && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
-            <p className="text-red-700 text-sm">{audioError}</p>
-          </div>
-        )}
-        
-        {/* Debug info display - only shown on iOS or when there are logs */}
-        {(iOSDevice || debugInfo.length > 0) && (
-          <div className="bg-gray-50 border border-gray-200 rounded p-2 mb-4 text-xs font-mono overflow-auto max-h-32">
-            <h4 className="font-bold text-gray-700 mb-1">Debug Log:</h4>
-            {debugInfo.length === 0 ? (
-              <p className="text-gray-500">No logs yet...</p>
-            ) : (
-              <ul className="space-y-1">
-                {debugInfo.map((message, i) => (
-                  <li key={i} className="text-gray-800">[{i}] {message}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-        
-        <div className="flex flex-wrap gap-2 items-center mb-4">
-          {/* Record button */}
-          <button
-            className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-lg transition-colors w-52 flex items-center justify-center`}
-            onClick={() => {
-              logDebug(`Record button clicked: ${isRecording ? 'stop recording' : 'start recording'}`);
-              if (isRecording) {
-                stopRecordingWithDebug();
-              } else {
-                startRecordingWithDebug();
-              }
-            }}
-          >
-            <span className="mr-2">
-              {isRecording ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="8" />
-                </svg>
-              )}
-            </span>
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
-          </button>
-          
-          {/* Play recording button */}
-          <button
-            className={`${audioURL ? (isRecordingPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600') : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center w-52`}
-            onClick={handleRecordingPlayback}
-            disabled={!audioURL}
-          >
-            <span className="mr-2">
-              {isRecordingPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </span>
-            {isRecordingPlaying ? 'Stop Playback' : 'Play Recording'}
-          </button>
-          
-          {/* Recording status indicator */}
-          {isRecording && (
-            <div className="flex items-center ml-2">
-              <div className="animate-pulse h-3 w-3 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-sm text-red-600 font-medium">Recording</span>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Hidden div for audio element and other non-visual elements */}
-      <div style={{ display: 'none' }}>
-        {/* Hidden div to render timestamp boxes for clicking */}
-        {timestamps.map((timestamp, index) => (
-          <div 
-            key={index}
-            onClick={() => handleWordClick(timestamp, index)}
-          >
-            {timestamp.word}
-          </div>
-        ))}
-      </div>
-      
       {/* Hide target visualizer but keep it in the DOM for audio functionality */}
       <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
               <AudioVisualizer 
@@ -1726,7 +1572,7 @@ export const Training = () => {
             // This is called when the target audio ends naturally
             // We only update isTargetPlaying, NOT the main isPlaying state
             if (!playing && isTargetPlaying) {
-              console.log('Target audio ended naturally, keeping main audio state unchanged');
+              log.log('Target audio ended naturally, keeping main audio state unchanged');
               setIsTargetPlaying(false);
             }
           }}
@@ -1734,7 +1580,20 @@ export const Training = () => {
           debugName="selection-visualizer"
         />
               </div>
-      
+
+
+      {/* Hidden div for audio element and other non-visual elements */}
+      <div style={{ display: 'none' }}>
+        {/* Hidden div to render timestamp boxes for clicking */}
+        {timestamps.map((timestamp, index) => (
+          <div 
+            key={index}
+            onClick={() => handleWordClick(timestamp, index)}
+          >
+            {timestamp.word}
+              </div>
+        ))}
+      </div>
       {/* Tips section moved to bottom of target audio as requested */}
       {person && currentSample && currentSample.tips.length > 0 && (
         <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
