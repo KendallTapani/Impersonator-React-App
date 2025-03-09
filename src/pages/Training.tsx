@@ -568,48 +568,31 @@ export const Training = () => {
         targetVisualizerRef.current?.pause();
       }
       
-      // Start recording playback with iOS special handling
+      // Start recording playback using simpler approach
       console.log('Starting recording playback');
       
-      if (iOSDevice) {
-        // iOS specific playback approach
-        try {
-          // Create a fresh audio element for iOS
-          const audioElement = new Audio(audioURL);
-          
-          // Set up event listeners
-          audioElement.onended = () => {
-            console.log('iOS recording playback ended');
-            setIsRecordingPlaying(false);
-          };
-          
-          // Play with promise handling
-          audioElement.play()
-            .then(() => {
-              setIsRecordingPlaying(true);
-              // Keep reference to the playing element
-              recordingAudioRef.current = audioElement;
-            })
-            .catch(err => {
-              console.error('iOS playback error:', err);
-              setIsRecordingPlaying(false);
-            });
-        } catch (err) {
-          console.error('Error setting up iOS playback:', err);
-        }
-      } else if (recordingAudioRef.current) {
-        // Original non-iOS approach
+      if (recordingAudioRef.current) {
+        // Reset playback position
         recordingAudioRef.current.currentTime = 0;
         
-        // Play in a way that prevents audio glitches
-        setTimeout(() => {
-          if (recordingAudioRef.current) {
-            recordingAudioRef.current.play().catch(err => {
-              console.error(`Error playing recording: ${err.message}`);
+        // Simple audio play
+        const playPromise = recordingAudioRef.current.play();
+        
+        // Handle play promises for better cross-browser compatibility
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('Recording playback started successfully');
+              setIsRecordingPlaying(true);
+            })
+            .catch(err => {
+              console.error('Error playing recording:', err);
+              setIsRecordingPlaying(false);
             });
-            setIsRecordingPlaying(true);
-          }
-        }, 50);
+        } else {
+          // Fallback for browsers that don't return a promise
+          setIsRecordingPlaying(true);
+        }
       } else {
         console.warn('No recording audio element available');
       }
@@ -859,44 +842,65 @@ export const Training = () => {
       console.log(`Creating recording audio element for URL: ${audioURL.substring(0, 30)}...`);
       
       // Create audio element
-      const audioElement = new Audio(audioURL);
-      
-      // Set preservesPitch if available to prevent pitch changes
       try {
-        const audioEl = audioElement as any;
-        if ('preservesPitch' in audioEl) {
-          audioEl.preservesPitch = true;
-          console.log('Enabled preservesPitch for recording audio');
+        // Create fresh Audio element each time for better iOS compatibility
+        const audioEl = new Audio(audioURL);
+        
+        // Set volume
+        audioEl.volume = volume;
+        
+        // Set playback rate
+        audioEl.playbackRate = playbackRate;
+        
+        // Try to preserve pitch if supported
+        try {
+          if ('preservesPitch' in audioEl) {
+            audioEl.preservesPitch = true;
+            console.log('Enabled preservesPitch for recording audio');
+          }
+        } catch (err) {
+          // Ignore errors for browsers that don't support this
         }
-      } catch (err) {
-        // Ignore errors for unsupported browsers
+        
+        // Set up event listeners for better cross-device compatibility
+        audioEl.addEventListener('ended', () => {
+          console.log('Recording audio playback ended');
+          setIsRecordingPlaying(false);
+        });
+        
+        audioEl.addEventListener('canplaythrough', () => {
+          console.log('Recording audio can play through');
+        });
+        
+        audioEl.addEventListener('error', (e) => {
+          console.error('Recording audio error:', e);
+          setIsRecordingPlaying(false);
+        });
+        
+        // Handle iOS specific needs
+        if (iOSDevice) {
+          // iOS sometimes needs a user gesture to enable audio
+          // We'll preload the audio to improve playback responsiveness
+          audioEl.preload = 'auto';
+          
+          // Force load for iOS
+          audioEl.load();
+        }
+        
+        // Update ref
+        recordingAudioRef.current = audioEl;
+        
+        console.log(`Recording audio element created: ${audioURL.substring(0, 30)}...`);
+      } catch (error) {
+        console.error('Error creating audio element:', error);
+        recordingAudioRef.current = null;
       }
-      
-      audioElement.addEventListener('ended', () => {
-        console.log('Recording audio playback ended');
-        setIsRecordingPlaying(false);
-      });
-      audioElement.addEventListener('error', (e) => {
-        console.error('Recording audio error:', e);
-        setIsRecordingPlaying(false);
-      });
-      
-      // Assign to ref
-      recordingAudioRef.current = audioElement;
-      
-      console.log(`Recording audio element created: ${audioURL.substring(0, 30)}...`);
     } else if (!audioURL && recordingAudioRef.current) {
       console.log('Cleaning up recording audio element');
       // Clean up previous audio
       recordingAudioRef.current = null;
-    } else if (audioURL && recordingAudioRef.current) {
-      // Update source if URL changed
-      if (recordingAudioRef.current.src !== audioURL) {
-        console.log('Updating recording audio source');
-        recordingAudioRef.current.src = audioURL;
-      }
     }
-  }, [audioURL]);
+  }, [audioURL, volume, playbackRate, iOSDevice]);
 
   // Update the useEffect that handles recording ended event
   useEffect(() => {
@@ -1455,8 +1459,8 @@ export const Training = () => {
               ))}
             </select>
           </label>
-        </div>
-      </div>
+            </div>
+          </div>
       
       {/* Recording section */}
 
