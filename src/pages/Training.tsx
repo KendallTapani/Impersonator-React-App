@@ -80,7 +80,9 @@ export const Training = () => {
   const playbackRateControlRef = useRef<HTMLDivElement>(null);
   
   // Recording state
-  const { audioURL, isRecording, startRecording, stopRecording } = useVoiceRecorder();
+  const { audioURL, isRecording, startRecording, stopRecording, isIOS } = useVoiceRecorder({
+    deviceId: selectedDevice
+  });
   
   // Timing references
   const playbackStartTimeRef = useRef<number>(0);
@@ -575,108 +577,126 @@ export const Training = () => {
       }
       setIsRecordingPlaying(false);
     } else {
-      // Start playback
+      // Start playback with special focus on iOS compatibility
       logDebug(`Attempting to play recording: ${audioURL.substring(0, 20)}...`);
       
-      // Special handling for iOS
-      if (iOSDevice) {
+      // Special fix for iOS
+      if (isIOS) {
         try {
-          // Use direct HTML audio element creation - sometimes more reliable on iOS
-          const audioElement = document.createElement('audio');
-          audioElement.src = audioURL;
-          audioElement.volume = volume;
+          // The key fix: Create an audio element the iOS-friendly way
+          const audioElement = new Audio();
           
-          // Set up event handlers before playing
-          audioElement.addEventListener('play', () => {
-            logDebug('Audio play event triggered');
+          // Set source AFTER attaching event listeners for iOS
+          audioElement.addEventListener('canplay', () => {
+            logDebug('Audio can play event fired');
+            
+            // iOS requires play to be called directly from a user event handler
+            // or very soon after, so we play immediately when canplay fires
+            const playPromise = audioElement.play();
+            logDebug('Play triggered from canplay event');
+            
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                logDebug('Play promise resolved - playback started');
+                setIsRecordingPlaying(true);
+              }).catch(err => {
+                const msg = `iOS play failed in canplay handler: ${err.message}`;
+                logDebug(msg);
+                setAudioError(msg);
+              });
+            }
+          });
+          
+          audioElement.addEventListener('playing', () => {
+            logDebug('Audio playing event fired');
             setIsRecordingPlaying(true);
           });
           
           audioElement.addEventListener('ended', () => {
-            logDebug('Audio ended event triggered');
+            logDebug('Audio ended event fired');
             setIsRecordingPlaying(false);
           });
           
           audioElement.addEventListener('error', (e) => {
-            const error = (e.target as HTMLAudioElement).error;
-            const errorMessage = `Audio error: ${error ? error.code : 'unknown'}`;
+            const error = audioElement.error;
+            const errorCode = error ? error.code : 'unknown';
+            const errorMessage = `Audio error: ${errorCode}`;
             logDebug(errorMessage);
-            setAudioError(errorMessage);
+            
+            // Provide more detailed error messages based on error code
+            switch(errorCode) {
+              case 1: 
+                setAudioError("Media download error - check your connection");
+                break;
+              case 2:
+                setAudioError("Network error during playback");
+                break;
+              case 3:
+                setAudioError("Audio decoding error - recording may be corrupted");
+                break;
+              case 4:
+                setAudioError("Audio format not supported by iOS - try recording again");
+                break;
+              default:
+                setAudioError(errorMessage);
+            }
+            
             setIsRecordingPlaying(false);
           });
           
-          // iOS sometimes needs this before play
-          document.body.appendChild(audioElement);
+          // For iOS, explicitly set these properties
+          audioElement.controls = false;
+          audioElement.volume = volume;
+          audioElement.preload = 'auto';
           
-          // Play with promise
-          const playPromise = audioElement.play();
-          logDebug('Play method called');
+          // CRITICAL: Set source AFTER event listeners for iOS
+          audioElement.src = audioURL;
           
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                logDebug('Play promise resolved successfully');
-              })
-              .catch((err) => {
-                const errorMessage = `iOS play failed: ${err.message || 'Unknown'}`;
-                logDebug(errorMessage);
-                setAudioError(errorMessage);
-                setIsRecordingPlaying(false);
-                
-                // Clean up the audio element
-                document.body.removeChild(audioElement);
-              });
-          }
+          // CRITICAL: Force load before play for iOS
+          audioElement.load();
+          logDebug('Audio element created and loaded');
           
-          // Store reference
+          // Store reference for pause/stop functionality
           recordingAudioRef.current = audioElement;
           
-          // Clean up function for when playback ends
-          const cleanup = () => {
-            if (document.body.contains(audioElement)) {
-              document.body.removeChild(audioElement);
-            }
-          };
-          
-          audioElement.addEventListener('ended', cleanup);
-          audioElement.addEventListener('pause', cleanup);
         } catch (err) {
           const errorMessage = `iOS audio setup error: ${err instanceof Error ? err.message : 'Unknown'}`;
           logDebug(errorMessage);
           setAudioError(errorMessage);
         }
       } else {
-        // Non-iOS standard approach
-        if (recordingAudioRef.current) {
-          // Reset playback position
-          recordingAudioRef.current.currentTime = 0;
+        // Non-iOS approach (simpler)
+        try {
+          const audioElement = new Audio(audioURL);
+          audioElement.volume = volume; 
+          const playPromise = audioElement.play();
           
-          try {
-            const playPromise = recordingAudioRef.current.play();
-            
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  logDebug('Play promise resolved successfully');
-                  setIsRecordingPlaying(true);
-                })
-                .catch(err => {
-                  logDebug(`Play error: ${err.message || 'Unknown'}`);
-                  setIsRecordingPlaying(false);
-                });
-            } else {
-              logDebug('No play promise returned, assuming playing');
-              setIsRecordingPlaying(true);
-            }
-          } catch (err) {
-            const errorMessage = `Playback error: ${err instanceof Error ? err.message : 'Unknown'}`;
-            logDebug(errorMessage);
-            setAudioError(errorMessage);
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                logDebug('Play promise resolved successfully');
+                setIsRecordingPlaying(true);
+              })
+              .catch(err => {
+                logDebug(`Play error: ${err.message || 'Unknown'}`);
+                setIsRecordingPlaying(false);
+              });
+          } else {
+            setIsRecordingPlaying(true);
           }
-        } else {
-          const errorMessage = 'No recording audio element available';
-          logDebug(errorMessage);
-          setAudioError(errorMessage);
+          
+          // Event listeners
+          audioElement.addEventListener('ended', () => {
+            logDebug('Audio ended');
+            setIsRecordingPlaying(false);
+          });
+          
+          // Store reference
+          recordingAudioRef.current = audioElement;
+          
+        } catch (err) {
+          logDebug(`Audio error: ${err instanceof Error ? err.message : 'Unknown'}`);
+          setAudioError(`Playback error: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
       }
     }
