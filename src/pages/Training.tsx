@@ -95,6 +95,10 @@ export const Training = () => {
   // Add a new function to handle the volume slider drag
   const [iOSDevice, setIOSDevice] = useState(false);
   
+  // Add these state variables to the component
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  
   // Load person data
   useEffect(() => {
     debug.log(`Loading person data for: ${personId}`);
@@ -546,55 +550,134 @@ export const Training = () => {
     }
   }, []);
 
-  // Replace the handleRecordingPlayback function entirely
+  // Add a debug logging function that shows on screen for iOS testing
+  const logDebug = (message: string) => {
+    console.log(message);
+    setDebugInfo(prev => [message, ...prev.slice(0, 9)]); // Keep last 10 messages
+  };
+
+  // Updated handleRecordingPlayback with more robust iOS handling
   const handleRecordingPlayback = () => {
+    // Reset any previous errors
+    setAudioError(null);
+    
     if (!audioURL) {
-      console.log('No recording to play back');
+      setAudioError("No recording available to play");
+      logDebug('Error: No recording available');
       return;
     }
     
     if (isRecordingPlaying) {
       // Stop playback
-      console.log('Pausing recording playback');
+      logDebug('Stopping recording playback');
       if (recordingAudioRef.current) {
         recordingAudioRef.current.pause();
       }
       setIsRecordingPlaying(false);
     } else {
-      // If starting playback, make sure target source is stopped
-      if (isTargetPlaying) {
-        console.log('Stopping target playback before starting recording');
-        setIsTargetPlaying(false);
-        targetVisualizerRef.current?.pause();
-      }
+      // Start playback
+      logDebug(`Attempting to play recording: ${audioURL.substring(0, 20)}...`);
       
-      // Start recording playback using simpler approach
-      console.log('Starting recording playback');
-      
-      if (recordingAudioRef.current) {
-        // Reset playback position
-        recordingAudioRef.current.currentTime = 0;
-        
-        // Simple audio play
-        const playPromise = recordingAudioRef.current.play();
-        
-        // Handle play promises for better cross-browser compatibility
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Recording playback started successfully');
-              setIsRecordingPlaying(true);
-            })
-            .catch(err => {
-              console.error('Error playing recording:', err);
-              setIsRecordingPlaying(false);
-            });
-        } else {
-          // Fallback for browsers that don't return a promise
-          setIsRecordingPlaying(true);
+      // Special handling for iOS
+      if (iOSDevice) {
+        try {
+          // Use direct HTML audio element creation - sometimes more reliable on iOS
+          const audioElement = document.createElement('audio');
+          audioElement.src = audioURL;
+          audioElement.volume = volume;
+          
+          // Set up event handlers before playing
+          audioElement.addEventListener('play', () => {
+            logDebug('Audio play event triggered');
+            setIsRecordingPlaying(true);
+          });
+          
+          audioElement.addEventListener('ended', () => {
+            logDebug('Audio ended event triggered');
+            setIsRecordingPlaying(false);
+          });
+          
+          audioElement.addEventListener('error', (e) => {
+            const error = (e.target as HTMLAudioElement).error;
+            const errorMessage = `Audio error: ${error ? error.code : 'unknown'}`;
+            logDebug(errorMessage);
+            setAudioError(errorMessage);
+            setIsRecordingPlaying(false);
+          });
+          
+          // iOS sometimes needs this before play
+          document.body.appendChild(audioElement);
+          
+          // Play with promise
+          const playPromise = audioElement.play();
+          logDebug('Play method called');
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                logDebug('Play promise resolved successfully');
+              })
+              .catch((err) => {
+                const errorMessage = `iOS play failed: ${err.message || 'Unknown'}`;
+                logDebug(errorMessage);
+                setAudioError(errorMessage);
+                setIsRecordingPlaying(false);
+                
+                // Clean up the audio element
+                document.body.removeChild(audioElement);
+              });
+          }
+          
+          // Store reference
+          recordingAudioRef.current = audioElement;
+          
+          // Clean up function for when playback ends
+          const cleanup = () => {
+            if (document.body.contains(audioElement)) {
+              document.body.removeChild(audioElement);
+            }
+          };
+          
+          audioElement.addEventListener('ended', cleanup);
+          audioElement.addEventListener('pause', cleanup);
+        } catch (err) {
+          const errorMessage = `iOS audio setup error: ${err instanceof Error ? err.message : 'Unknown'}`;
+          logDebug(errorMessage);
+          setAudioError(errorMessage);
         }
       } else {
-        console.warn('No recording audio element available');
+        // Non-iOS standard approach
+        if (recordingAudioRef.current) {
+          // Reset playback position
+          recordingAudioRef.current.currentTime = 0;
+          
+          try {
+            const playPromise = recordingAudioRef.current.play();
+            
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  logDebug('Play promise resolved successfully');
+                  setIsRecordingPlaying(true);
+                })
+                .catch(err => {
+                  logDebug(`Play error: ${err.message || 'Unknown'}`);
+                  setIsRecordingPlaying(false);
+                });
+            } else {
+              logDebug('No play promise returned, assuming playing');
+              setIsRecordingPlaying(true);
+            }
+          } catch (err) {
+            const errorMessage = `Playback error: ${err instanceof Error ? err.message : 'Unknown'}`;
+            logDebug(errorMessage);
+            setAudioError(errorMessage);
+          }
+        } else {
+          const errorMessage = 'No recording audio element available';
+          logDebug(errorMessage);
+          setAudioError(errorMessage);
+        }
       }
     }
   };
@@ -1045,6 +1128,41 @@ export const Training = () => {
     };
   }, []);
 
+  // Add these wrapper functions to add debugging to the imported recording functions
+  const startRecordingWithDebug = async () => {
+    setAudioError(null);
+    logDebug(`Starting recording with device: ${selectedDevice}`);
+    
+    if (!selectedDevice) {
+      setAudioError('Please select a microphone before recording');
+      logDebug('No microphone selected');
+      return;
+    }
+    
+    try {
+      // Call the original startRecording function
+      await startRecording();
+      logDebug('Recording started successfully');
+    } catch (err) {
+      const errorMessage = `Recording error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      logDebug(errorMessage);
+      setAudioError(errorMessage);
+    }
+  };
+  
+  const stopRecordingWithDebug = () => {
+    logDebug('Stopping recording');
+    stopRecording();
+    
+    // On iOS, we'll explicitly clear the audio ref after stopping
+    if (iOSDevice && recordingAudioRef.current) {
+      logDebug('Clearing recording audio ref for iOS');
+      setTimeout(() => {
+        recordingAudioRef.current = null;
+      }, 100);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-white">
       
@@ -1411,9 +1529,9 @@ export const Training = () => {
                           onClick={() => {
                   console.log(`Record button clicked, current state: ${isRecording ? 'recording' : 'not recording'}`);
                   if (isRecording) {
-                    stopRecording();
+                    stopRecordingWithDebug();
                   } else {
-                    startRecording();
+                    startRecordingWithDebug();
                   }
                 }}
               >
@@ -1463,11 +1581,105 @@ export const Training = () => {
           </div>
       
       {/* Recording section */}
-
-          {error && (
-        <p className="text-red-600 mt-2">{error.message}</p>
-      )}
+      <div className="bg-white shadow-sm rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Recording Controls</h3>
+          
+          {/* iOS Debug Panel - Only show on iOS or when there are errors */}
+          {(iOSDevice || audioError) && (
+            <div className="ml-4 text-xs text-right">
+              <button 
+                onClick={() => setDebugInfo([])}
+                className="text-gray-500 hover:text-gray-700 text-xs mb-1"
+              >
+                Clear Log
+              </button>
+            </div>
+          )}
+        </div>
         
+        {/* Error message display */}
+        {audioError && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
+            <p className="text-red-700 text-sm">{audioError}</p>
+          </div>
+        )}
+        
+        {/* Debug info display - only shown on iOS or when there are logs */}
+        {(iOSDevice || debugInfo.length > 0) && (
+          <div className="bg-gray-50 border border-gray-200 rounded p-2 mb-4 text-xs font-mono overflow-auto max-h-32">
+            <h4 className="font-bold text-gray-700 mb-1">Debug Log:</h4>
+            {debugInfo.length === 0 ? (
+              <p className="text-gray-500">No logs yet...</p>
+            ) : (
+              <ul className="space-y-1">
+                {debugInfo.map((message, i) => (
+                  <li key={i} className="text-gray-800">[{i}] {message}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        
+        <div className="flex flex-wrap gap-2 items-center mb-4">
+          {/* Record button */}
+          <button
+            className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-4 py-2 rounded-lg transition-colors w-52 flex items-center justify-center`}
+            onClick={() => {
+              logDebug(`Record button clicked: ${isRecording ? 'stop recording' : 'start recording'}`);
+              if (isRecording) {
+                stopRecordingWithDebug();
+              } else {
+                startRecordingWithDebug();
+              }
+            }}
+          >
+            <span className="mr-2">
+              {isRecording ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="8" />
+                </svg>
+              )}
+            </span>
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </button>
+          
+          {/* Play recording button */}
+          <button
+            className={`${audioURL ? (isRecordingPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600') : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center w-52`}
+            onClick={handleRecordingPlayback}
+            disabled={!audioURL}
+          >
+            <span className="mr-2">
+              {isRecordingPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </span>
+            {isRecordingPlaying ? 'Stop Playback' : 'Play Recording'}
+          </button>
+          
+          {/* Recording status indicator */}
+          {isRecording && (
+            <div className="flex items-center ml-2">
+              <div className="animate-pulse h-3 w-3 bg-red-500 rounded-full mr-2"></div>
+              <span className="text-sm text-red-600 font-medium">Recording</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
       {/* Hidden div for audio element and other non-visual elements */}
       <div style={{ display: 'none' }}>
         {/* Hidden div to render timestamp boxes for clicking */}
