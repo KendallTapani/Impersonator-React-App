@@ -9,36 +9,9 @@ A React application that helps users practice voice impersonations with a catalo
 - **Organized Collections**: Browse voices by category (Politicians, Celebrities, Podcasters, YouTubers)
 - **Simple Access**: Protected with an access code system (no login required)
 
-## Getting Started
+## Getting Started: 
+- Hosted on voiceimpersonator.vercel.app
 
-### Prerequisites
-
-- Node.js 16+ and npm/yarn
-- Modern web browser
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/voice-impersonator.git
-cd voice-impersonator
-```
-
-2. Install dependencies
-```bash
-npm install
-# or
-yarn install
-```
-
-3. Start the development server
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
 ## Access Code
 
@@ -64,16 +37,6 @@ voice-impersonator/
 │   └── utils/       # Utility functions
 └── ...
 ```
-
-## Deployment
-
-### Deploying to Vercel
-
-1. Push your code to GitHub
-2. Sign up for [Vercel](https://vercel.com)
-3. Import your GitHub repository
-4. Vercel will automatically detect the React app configuration
-5. Click "Deploy"
 
 ### Considerations
 
