@@ -1,0 +1,35 @@
+{
+  "id": "jd-vance",
+  "name": "JD Vance",
+  "title": "U.S. Senator from Ohio",
+  "summary": "JD Vance is known for his measured, thoughtful speaking style with occasional Midwestern inflections and appeals to working-class values.",
+  "bio": "James David Vance is an American politician, author, and venture capitalist serving as the junior United States senator from Ohio since 2023. He first gained recognition for his memoir 'Hillbilly Elegy,' which describes his upbringing in the Rust Belt.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Calm, measured delivery",
+    "Occasional Midwestern accent features",
+    "Deliberate speaking pace",
+    "Conversational tone with academic vocabulary"
+  ],
+  "difficulty": "easy",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "American Values",
+      "description": "Speech about traditional American values",
+      "difficulty": "easy",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "We need to remember the values that made this country great. Hard work, family, faith, and community are the foundations of the American dream.",
+      "tags": ["senate", "speech"],
+      "tips": [
+        "Note his measured pace and deliberate tone",
+        "Pay attention to his emphasis on value-laden words"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "joe-biden",
+  "name": "Joe Biden",
+  "title": "46th President of the United States",
+  "summary": "Joe Biden has a folksy, conversational speaking style with occasional whispered emphasis, frequent personal anecdotes, and characteristic phrases like 'folks' and 'look' to connect with his audience.",
+  "bio": "Joseph Robinette Biden Jr. is an American politician who is the 46th and current president of the United States. A member of the Democratic Party, he previously served as the 47th vice president from 2009 to 2017 under President Barack Obama and represented Delaware in the United States Senate from 1973 to 2009.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Folksy, conversational tone",
+    "Occasional whispered emphasis",
+    "Frequent use of phrases like 'folks' and 'look'",
+    "Delaware accent with some regional expressions"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "American Unity",
+      "description": "Speech on uniting the nation",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Look, folks, we need to remember who we are. We're the United States of America. There's nothing, nothing beyond our capacity if we do it together. We just have to remember who we are.",
+      "tags": ["unity", "presidency"],
+      "tips": [
+        "Notice his use of 'Look' and 'folks' as conversational markers",
+        "Pay attention to how he lowers his voice for emphasis",
+        "Focus on the rhythmic repetition in his speech patterns"
+      ]
+    }
+  ]
+} 

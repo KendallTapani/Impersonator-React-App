@@ -1,0 +1,36 @@
+{
+  "id": "kai-cenat",
+  "name": "Kai Cenat",
+  "title": "Streamer and Content Creator",
+  "summary": "Kai Cenat speaks with high energy, a distinctive New York accent, frequent exclamations, and a rapid-fire delivery style that shifts quickly between calm conversation and explosive reactions.",
+  "bio": "Kai Cenat is an American Twitch streamer, YouTuber, and content creator known for his gaming, reaction videos, and comedic content. Rising to prominence through viral videos and streaming marathons, he has become one of the most-subscribed Twitch streamers, known for his energetic personality and memorable interactions.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinctive New York accent with urban slang",
+    "Explosive reactions with dramatic volume shifts",
+    "High-pitched exclamations during excitement",
+    "Rapid speech pattern with unique cadence"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Stream Reaction",
+      "description": "Typical reaction during an intense gaming or reaction moment",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "YO WHAT?! Nah, that's WILD! Chat, are y'all seeing this?! OH MY GOD! No way, no way, no way! This can't be real right now! WHAT IS HAPPENING?! I'm done, bro. I'm literally done. That's CRAZY!",
+      "tags": ["streaming", "reactions"],
+      "tips": [
+        "Focus on his New York accent and unique pronunciation patterns",
+        "Practice the dramatic shifts from normal speech to explosive reactions",
+        "Pay attention to his high-pitched exclamations when surprised",
+        "Master his rapid-fire delivery that sometimes includes slang and shortened words"
+      ]
+    }
+  ]
+} 

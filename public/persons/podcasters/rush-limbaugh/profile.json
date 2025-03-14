@@ -1,0 +1,38 @@
+{
+  "id": "rush-limbaugh",
+  "name": "Rush Limbaugh",
+  "title": "Former Host of The Rush Limbaugh Show",
+  "summary": "Rush Limbaugh was known for his distinctive bombastic delivery, deep resonant voice, theatrical emphasis, and characteristic phrases like 'talent on loan from God' and 'with half my brain tied behind my back.'",
+  "bio": "Rush Limbaugh (1951-2021) was an American radio personality, conservative political commentator, author, and television show host. He was best known as the host of his radio show The Rush Limbaugh Show, which was nationally syndicated from 1988 until his death in 2021.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Deep, resonant voice with Midwestern accent",
+    "Bombastic, theatrical delivery with dramatic pauses",
+    "Frequent use of exaggerated emphasis and elongated words",
+    "Signature phrases and catchwords ('dittos', 'mega')",
+    "Rapid shifts between serious and humorous tones"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Talent On Loan From God",
+      "description": "Classic Rush monologue with signature flourishes",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Folks, this is not complicated. The mainstream media won't tell you this, but I will. With half my brain tied behind my back just to make it fair. I am equal time. I am the epitome of morality and virtue. I am... the all-knowing, all-sensing, all-everything Maha Rushie!",
+      "tags": ["radio", "politics"],
+      "tips": [
+        "Focus on his bombastic, theatrical delivery style",
+        "Practice his distinctive Midwestern pronunciation",
+        "Pay attention to his rapid shifts between serious commentary and humor",
+        "Master his trademark phrases with the exact intonation he used",
+        "Notice how he elongates certain words for dramatic effect"
+      ]
+    }
+  ]
+} 

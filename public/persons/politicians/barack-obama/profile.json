@@ -1,0 +1,36 @@
+{
+  "id": "barack-obama",
+  "name": "Barack Obama",
+  "title": "44th President of the United States",
+  "summary": "Barack Obama is known for his eloquent oratory with a distinctive cadence, frequent thoughtful pauses, and an inspirational tone that builds throughout his speeches.",
+  "bio": "Barack Hussein Obama II is an American politician, attorney, and author who served as the 44th president of the United States from 2009 to 2017. A member of the Democratic Party, he was the first African-American president of the United States.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Distinctive measured cadence with pauses",
+    "Smooth baritone voice",
+    "Rises in pitch for emphasis",
+    "Dynamic range from conversational to inspirational"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Yes We Can",
+      "description": "From his famous campaign speech",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Change will not come if we wait for some other person or some other time. We are the ones we've been waiting for. We are the change that we seek.",
+      "tags": ["campaign", "inspirational"],
+      "tips": [
+        "Focus on his distinctive pauses between phrases",
+        "Note how he builds rhythm through repetition",
+        "Pay attention to the rise and fall of his tone"
+      ]
+    }
+  ]
+} 

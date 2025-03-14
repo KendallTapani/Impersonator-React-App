@@ -1,0 +1,36 @@
+{
+  "id": "kamala-harris",
+  "name": "Kamala Harris",
+  "title": "Vice President of the United States",
+  "summary": "Kamala Harris has a rhythmic, animated speaking style with distinctive laughter, prosecutorial precision in making points, and an expressive delivery that varies in tempo and emphasis.",
+  "bio": "Kamala Devi Harris is an American politician and attorney who is the 49th and current vice president of the United States. She is the first female vice president and the highest-ranking female official in U.S. history, as well as the first African American and first Asian American vice president.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Animated, expressive delivery",
+    "Distinctive rhythmic pattern",
+    "Characteristic laugh",
+    "Precise, prosecutorial emphasis on key points"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "American Possibilities",
+      "description": "Speech on American opportunity",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "We're not often taught their stories, but when we look at who we are as Americans, we see that we are all a beautiful and diverse tapestry of experiences and backgrounds.",
+      "tags": ["diversity", "opportunity"],
+      "tips": [
+        "Notice her rhythmic speaking pattern with clear emphasis",
+        "Pay attention to the rising and falling tone for emphasis",
+        "Focus on the crisp, precise pronunciation of key words"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "tucker-carlsen",
+  "name": "Tucker Carlson",
+  "title": "Former Host of Tucker Carlson Tonight",
+  "summary": "Tucker Carlson speaks with a distinctive cadence characterized by questioning intonation, dramatic pauses, and an incredulous tone that rises at key points for emphasis.",
+  "bio": "Tucker Carlson is an American television host, conservative political commentator, and author. He formerly hosted Tucker Carlson Tonight on Fox News, and now hosts a show on X (formerly Twitter). He is known for his provocative interview style and political commentary.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinctive questioning intonation that rises at the end of statements",
+    "Frequent use of dramatic pauses for effect",
+    "Incredulous tone when expressing disagreement",
+    "Emphasized pronunciation of certain words for dramatic effect"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Asking the Questions",
+      "description": "Classic monologue questioning conventional wisdom",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Why would anyone believe that? Have you noticed how they never actually answer the question? They just attack you for asking. But what exactly are they hiding? That's the real question, and no one in Washington wants to talk about it.",
+      "tags": ["politics", "commentary"],
+      "tips": [
+        "Focus on his signature rising intonation at the end of questions",
+        "Pay attention to his dramatic pauses for effect",
+        "Note how he emphasizes certain words with an incredulous tone",
+        "Practice his habit of delivering statements as questions"
+      ]
+    }
+  ]
+} 

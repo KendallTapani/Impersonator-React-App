@@ -1,0 +1,36 @@
+{
+  "id": "markiplier",
+  "name": "Markiplier",
+  "title": "Gaming and Narrative Content Creator",
+  "summary": "Markiplier speaks with a deep, resonant voice characterized by dramatic fluctuations in tone, theatrical delivery, and a wide emotional range from calm narration to extreme excitement or fear.",
+  "bio": "Mark Fischbach, known as Markiplier, is an American YouTuber, actor, and podcast host. He is known for his Let's Play videos, comedy sketches, animated parodies, and charity work. His theatrical style, deep voice, and expressiveness have made him one of the most popular gaming personalities on YouTube.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Rich, deep baritone voice with radio-quality resonance",
+    "Theatrical delivery with extreme dynamic range",
+    "Articulate enunciation even during excited moments",
+    "Distinctive laughs ranging from giggles to deep bellows"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Horror Game Reaction",
+      "description": "Classic Markiplier reaction to a horror game jump scare",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Hello everybody, my name is Markiplier and welcome to another episode of [game name]! I have a feeling something terrible is about to— OH MY GOD! WHAT WAS THAT?! Did you see that?! That was TERRIFYING! Okay, okay... I'm fine, everything's fine, let's just... keep going.",
+      "tags": ["gaming", "horror"],
+      "tips": [
+        "Practice his deep, resonant introduction with careful articulation",
+        "Master the sudden shift from calm to extreme reaction",
+        "Pay attention to how he maintains clear enunciation even when shouting",
+        "Note the distinctive way he says his name in introductions"
+      ]
+    }
+  ]
+} 

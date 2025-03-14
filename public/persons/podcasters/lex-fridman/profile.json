@@ -1,0 +1,36 @@
+{
+  "id": "lex-fridman",
+  "name": "Lex Fridman",
+  "title": "Host of Lex Fridman Podcast",
+  "summary": "Lex Fridman speaks with a calm, measured, almost monotone delivery that has a subtle Russian accent. His speech is characterized by thoughtful pauses, philosophical depth, and introspective questioning.",
+  "bio": "Lex Fridman is a research scientist at MIT, focusing on human-centered artificial intelligence. He hosts the Lex Fridman Podcast where he engages in deep conversations with guests about AI, science, technology, philosophy, and the nature of intelligence and consciousness.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Calm, measured delivery with slight Russian accent",
+    "Soft-spoken, almost monotone pitch",
+    "Philosophical, introspective tone",
+    "Long, thoughtful pauses between complex ideas"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "On Consciousness",
+      "description": "Philosophical thoughts on consciousness and AI",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "What is consciousness? Is it possible that artificial intelligence will one day experience subjective feelings, emotions, and perhaps even love? These are deep philosophical questions at the intersection of computer science, neuroscience, and philosophy.",
+      "tags": ["ai", "philosophy"],
+      "tips": [
+        "Focus on the calm, measured delivery with minimal pitch variation",
+        "Pay attention to the subtle Russian accent in certain words",
+        "Practice the characteristic long, thoughtful pauses",
+        "Note the soft-spoken, almost whispery quality at times"
+      ]
+    }
+  ]
+} 
