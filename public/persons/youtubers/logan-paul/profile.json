@@ -1,0 +1,36 @@
+{
+  "id": "logan-paul",
+  "name": "Logan Paul",
+  "title": "Content Creator and Entrepreneur",
+  "summary": "Logan Paul speaks with high energy and confidence, characterized by a boisterous delivery, exaggerated expressions, and a distinctively brash, attention-grabbing style that modulates between conversational and highly animated.",
+  "bio": "Logan Paul is an American YouTuber, podcast host, actor, and entrepreneur. He gained popularity on Vine before transitioning to YouTube and has since diversified into boxing, wrestling, and founding various business ventures including Prime Hydration and the Impaulsive podcast.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Confident, high-energy delivery with vocal swagger",
+    "Dramatic volume fluctuations for emphasis",
+    "Elongated vowels in excited statements",
+    "Distinctive laugh and excited reactions"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Vlog Introduction",
+      "description": "Typical Logan Paul vlog opener with high energy",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "What's up, LOGANG! Welcome back to another INSANE video! Today, we're doing something absolutely CRAZY that no one has EVER done before! If you're new here, make sure to SMASH that subscribe button, and let's get right into this epic adventure!",
+      "tags": ["vlog", "entertainment"],
+      "tips": [
+        "Focus on his confident, almost brash delivery style",
+        "Pay attention to how he emphasizes certain words by elongating them",
+        "Practice his characteristic rise in volume on phrases like 'SMASH that subscribe button'",
+        "Notice the rhythmic cadence he uses when building excitement"
+      ]
+    }
+  ]
+} 

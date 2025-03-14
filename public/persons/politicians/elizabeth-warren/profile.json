@@ -1,0 +1,36 @@
+{
+  "id": "elizabeth-warren",
+  "name": "Elizabeth Warren",
+  "title": "U.S. Senator from Massachusetts",
+  "summary": "Elizabeth Warren speaks with a passionate, professorial delivery style, using clear explanations of complex topics, occasional Oklahoma accent patterns, and energetic emphasis on policy points.",
+  "bio": "Elizabeth Ann Warren is an American politician and former law professor who is the senior United States senator from Massachusetts, serving since 2013. A member of the Democratic Party and regarded as a progressive, Warren has focused on consumer protection, economic opportunity, and the social safety net.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Professorial, explanatory tone",
+    "Passionate emphasis on key policy points",
+    "Slight Oklahoma accent in certain words",
+    "Clear articulation of complex topics"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Economic Fairness",
+      "description": "Speech on economic policy and fairness",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "The system is rigged against ordinary Americans. These aren't cracks in the system; they are the system. We need big, structural change to create an economy that works for everyone, not just the wealthy and well-connected.",
+      "tags": ["economy", "structural change"],
+      "tips": [
+        "Focus on her professorial, explanatory rhythm",
+        "Pay attention to how she emphasizes words like 'rigged' and 'structural'",
+        "Notice her clear articulation and measured pacing"
+      ]
+    }
+  ]
+} 

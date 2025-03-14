@@ -1,0 +1,170 @@
+{
+  "id": "donald-trump",
+  "name": "Donald Trump",
+  "title": "45th and 47th President of the United States",
+  "summary": "Known for his distinctive speaking style and memorable catchphrases like 'You're fired!' and 'Make America Great Again.'",
+  "bio": "Donald J. Trump served as the 45th, and now 47th president of the United States. Before entering politics, he was a real estate developer and television personality.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Strong New York accent",
+    "Frequent hand gestures",
+    "Emphasis on certain words",
+    "Repetition of key phrases"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Make America Great Again",
+      "description": "Famous campaign slogan speech excerpt",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "We will make America great.",
+      "tags": ["campaign", "speech"],
+      "tips": [
+        "Notice the emphasis on 'will'",
+        "Pay attention to how he emphasizes 'great'"
+      ]
+    },
+    {
+      "id": "sample2",
+      "title": "Nobody Knows Better",
+      "description": "Classic Trump self-confidence expression",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample2.wav",
+      "transcriptFile": "sample2.csv",
+      "fullText": "Nobody knows better than me.",
+      "tags": ["confidence", "style"],
+      "tips": [
+        "Focus on his emphasis on 'Nobody'",
+        "Note the slight pause before 'me'"
+      ]
+    },
+    {
+      "id": "sample3",
+      "title": "Believe Me Folks",
+      "description": "Signature trust-building phrase",
+      "difficulty": "easy",
+      "duration": 2.5,
+      "audioFile": "sample3.wav",
+      "transcriptFile": "sample3.csv",
+      "fullText": "Believe me it's tremendous folks.",
+      "tags": ["rally", "catchphrase"],
+      "tips": [
+        "Pay attention to how he elongates 'tremendous'",
+        "Notice the softer tone on 'folks'"
+      ]
+    },
+    {
+      "id": "sample4",
+      "title": "Terrible Deal",
+      "description": "Critical assessment of policy",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample4.wav",
+      "transcriptFile": "sample4.csv",
+      "fullText": "This deal is absolutely terrible.",
+      "tags": ["criticism", "policy"],
+      "tips": [
+        "Notice the emphasis on 'absolutely'",
+        "Focus on the strong delivery of 'terrible'"
+      ]
+    },
+    {
+      "id": "sample5",
+      "title": "Win Bigly",
+      "description": "Victory prediction with unique adverb",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample5.wav",
+      "transcriptFile": "sample5.csv",
+      "fullText": "We're going to win bigly.",
+      "tags": ["campaign", "victory"],
+      "tips": [
+        "Focus on his unique pronunciation of 'bigly'",
+        "Pay attention to the rising tone on 'win'"
+      ]
+    },
+    {
+      "id": "sample6",
+      "title": "China Trade",
+      "description": "Comments on international trade",
+      "difficulty": "hard",
+      "duration": 2.5,
+      "audioFile": "sample6.wav",
+      "transcriptFile": "sample6.csv",
+      "fullText": "China is ripping us off.",
+      "tags": ["trade", "international"],
+      "tips": [
+        "Notice his distinctive pronunciation of 'China'",
+        "Pay attention to the emphasis on 'ripping'"
+      ]
+    },
+    {
+      "id": "sample7",
+      "title": "Border Wall",
+      "description": "Campaign promise on immigration",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample7.wav",
+      "transcriptFile": "sample7.csv",
+      "fullText": "Build the wall very quickly.",
+      "tags": ["immigration", "policy"],
+      "tips": [
+        "Focus on the hard emphasis on 'Build'",
+        "Notice the quick delivery of 'very quickly'"
+      ]
+    },
+    {
+      "id": "sample8",
+      "title": "You're Fired",
+      "description": "Famous catchphrase from The Apprentice",
+      "difficulty": "easy",
+      "duration": 2.5,
+      "audioFile": "sample8.wav",
+      "transcriptFile": "sample8.csv",
+      "fullText": "You're fired get out now.",
+      "tags": ["catchphrase", "business"],
+      "tips": [
+        "Notice the dramatic pause after 'fired'",
+        "Pay attention to the sharp delivery of 'now'"
+      ]
+    },
+    {
+      "id": "sample9",
+      "title": "Fake News",
+      "description": "Media criticism phrase",
+      "difficulty": "medium",
+      "duration": 2.5,
+      "audioFile": "sample9.wav",
+      "transcriptFile": "sample9.csv",
+      "fullText": "Fake news is enemy people.",
+      "tags": ["media", "criticism"],
+      "tips": [
+        "Focus on the emphasis and elongation of 'Fake'",
+        "Notice the dismissive tone throughout the phrase"
+      ]
+    },
+    {
+      "id": "sample10",
+      "title": "The Best Words",
+      "description": "Self-reference to vocabulary",
+      "difficulty": "easy",
+      "duration": 2.5,
+      "audioFile": "sample10.wav",
+      "transcriptFile": "sample10.csv",
+      "fullText": "I have the best words.",
+      "tags": ["speech", "humor"],
+      "tips": [
+        "Pay attention to the emphasis on 'best'",
+        "Note the confident, almost boastful delivery"
+      ]
+    }
+  ]
+} 

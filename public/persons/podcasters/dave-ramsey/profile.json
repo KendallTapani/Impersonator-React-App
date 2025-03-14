@@ -1,0 +1,36 @@
+{
+  "id": "dave-ramsey",
+  "name": "Dave Ramsey",
+  "title": "Host of The Ramsey Show",
+  "summary": "Dave Ramsey speaks with a distinctive Tennessee accent, authoritative tone, and direct, no-nonsense delivery, often using analogies and folksy wisdom to explain financial concepts.",
+  "bio": "Dave Ramsey is an American personal finance advisor, radio show host, author, and businessman. He hosts The Ramsey Show, where he provides financial advice and answers caller questions about debt, saving, and investing.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Strong Tennessee Southern accent",
+    "Authoritative, fatherly tone",
+    "Direct, occasionally stern delivery",
+    "Use of folksy phrases and financial axioms"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Debt Free Scream",
+      "description": "Celebrating financial freedom with a caller",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Listen folks, your income is your most powerful wealth-building tool, not your credit score. When you're debt-free, you've got options. You're not sending your life energy to VISA and MasterCard every month. Now, on the count of three, let me hear that debt-free scream!",
+      "tags": ["finance", "advice"],
+      "tips": [
+        "Focus on his strong Tennessee accent and pronunciation of words like 'folks'",
+        "Pay attention to the authoritative, confident tone",
+        "Practice his emphatic delivery on key financial phrases",
+        "Note the occasional chuckle and fatherly tone he uses"
+      ]
+    }
+  ]
+} 
