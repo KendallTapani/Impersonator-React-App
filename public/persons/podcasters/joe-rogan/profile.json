@@ -1,0 +1,36 @@
+{
+  "id": "joe-rogan",
+  "name": "Joe Rogan",
+  "title": "Host of The Joe Rogan Experience",
+  "summary": "Joe Rogan has a distinct raspy, masculine voice with a conversational tone, frequent laughter, and emphatic expressions of amazement or disbelief, often punctuated with vocal fry.",
+  "bio": "Joe Rogan is an American podcaster, UFC commentator, comedian, and former television presenter. He hosts The Joe Rogan Experience, one of the most popular podcasts globally, where he conducts long-form conversations with guests from various fields.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Raspy, masculine tone with vocal fry",
+    "Authentic, conversational delivery",
+    "Frequent laughter and exclamations",
+    "Boston-influenced accent with distinctive pronunciation patterns"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "That's Crazy",
+      "description": "Classic reaction to an unexpected fact",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "That's crazy, man. Have you ever tried DMT? The thing that people don't understand is how complex and bizarre reality actually is. It's entirely possible that we're living in a simulation. Jamie, pull that up.",
+      "tags": ["podcast", "comedy"],
+      "tips": [
+        "Focus on his raspy vocal quality and vocal fry at the end of sentences",
+        "Practice his distinctive drawn-out 'crazy' with rising intonation",
+        "Include his characteristic laugh and expressions of amazement",
+        "Pay attention to his conversational rhythm and natural pauses"
+      ]
+    }
+  ]
+} 

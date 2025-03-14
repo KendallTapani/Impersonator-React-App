@@ -1,0 +1,36 @@
+{
+  "id": "andrew-huberman",
+  "name": "Andrew Huberman",
+  "title": "Host of Huberman Lab Podcast",
+  "summary": "Andrew Huberman speaks with a deliberate, precise delivery, using scientific terminology with clear explanations, occasional vocal fry, and a methodical pace that makes complex neuroscience accessible.",
+  "bio": "Andrew Huberman is a neuroscientist and tenured professor in the Department of Neurobiology at the Stanford University School of Medicine. He hosts the Huberman Lab Podcast, where he discusses neuroscience and practical tools for everyday life based on scientific research.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Deliberate, measured speaking pace",
+    "Academic precision with accessible explanations",
+    "Occasional vocal fry, especially at sentence ends",
+    "Methodical structure with clear transitions"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Neuroplasticity",
+      "description": "Explanation of how the brain changes",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Neuroplasticity is the brain's ability to reorganize itself by forming new neural connections. What's fascinating about this process is that it continues throughout life. By leveraging specific protocols involving focus, deliberate practice, and recovery, we can dramatically enhance our ability to learn and perform.",
+      "tags": ["science", "neuroscience"],
+      "tips": [
+        "Focus on his deliberate, measured delivery of scientific terms",
+        "Pay attention to how he transitions between complex and accessible language",
+        "Notice the slight vocal fry at the end of sentences",
+        "Practice his methodical explanation style with clear emphasis on key terms"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "nancy-pelosi",
+  "name": "Nancy Pelosi",
+  "title": "Former Speaker of the House",
+  "summary": "Nancy Pelosi speaks with a measured, controlled delivery style, precise pronunciation, and methodical cadence that emphasizes policy points with occasional hand gestures for emphasis.",
+  "bio": "Nancy Patricia Pelosi is an American politician who served as the 52nd and 54th speaker of the United States House of Representatives from 2007 to 2011 and again from 2019 to 2023. She has served as a U.S. representative from California since 1987.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Controlled, deliberate pacing",
+    "Precise pronunciation and articulation",
+    "Methodical delivery of key points",
+    "California accent with Italian-American influence"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Legislative Leadership",
+      "description": "Address on legislative priorities",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Our diversity is our strength, and our unity is our power. We must come together, not as Democrats or Republicans, but as Americans to address the challenges facing our nation.",
+      "tags": ["unity", "leadership"],
+      "tips": [
+        "Notice her deliberate, controlled delivery style",
+        "Pay attention to her precise pronunciation of difficult words",
+        "Focus on her steady, consistent pacing throughout"
+      ]
+    }
+  ]
+} 

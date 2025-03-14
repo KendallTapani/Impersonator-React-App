@@ -1,0 +1,36 @@
+{
+  "id": "mr-beast",
+  "name": "MrBeast",
+  "title": "Philanthropic Content Creator",
+  "summary": "MrBeast speaks with enthusiasm and energy, characterized by dramatic vocal shifts, excited delivery, and pronounced emphasis on key phrases about challenges, prizes, and philanthropy.",
+  "bio": "Jimmy Donaldson, known as MrBeast, is an American YouTuber and philanthropist known for his expensive stunts, challenges, and charitable activities. His channel is one of the most-subscribed on YouTube, famous for videos featuring large cash prizes and donations.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Enthusiastic delivery with explosive energy during reveals",
+    "Dramatic vocal shifts from calm explanation to excited announcements",
+    "Distinctive emphasis on words like 'literally' and numbers/amounts",
+    "Clear articulation with slight North Carolina accent"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Challenge Announcement",
+      "description": "Introducing a typical MrBeast challenge with high stakes",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Today, I'm giving away ONE HUNDRED THOUSAND DOLLARS to whoever can stay in this circle the longest! That's right, all you have to do is stand here, and you could literally walk away with life-changing money. Last person to leave wins everything!",
+      "tags": ["challenges", "philanthropy"],
+      "tips": [
+        "Focus on his energetic delivery with strong emphasis on numbers and prizes",
+        "Pay attention to how he stretches certain words for dramatic effect",
+        "Practice his excited tone when revealing the stakes",
+        "Notice how he uses 'literally' and emphasizes it distinctly"
+      ]
+    }
+  ]
+} 

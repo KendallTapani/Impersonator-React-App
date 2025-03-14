@@ -1,0 +1,35 @@
+{
+  "id": "ben-shapiro",
+  "name": "Ben Shapiro",
+  "title": "Host of The Ben Shapiro Show",
+  "summary": "Ben Shapiro speaks with a rapid-fire delivery style, high pitch, and precise articulation, often using complex vocabulary and logical structures to present his arguments.",
+  "bio": "Ben Shapiro is an American conservative political commentator, media host, and attorney. He hosts The Ben Shapiro Show, a daily political podcast and live radio show, and is known for his fast-talking debate style and conservative viewpoints.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Extremely rapid speaking pace",
+    "Higher-pitched voice",
+    "Clear, precise articulation",
+    "Rhythmic cadence with emphasis on key points"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Facts and Logic",
+      "description": "Classic argumentation on facts versus feelings",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Facts don't care about your feelings. The reality is that objective truth exists independent of your subjective emotional response, and policy should be based on data rather than sentiment.",
+      "tags": ["debate", "politics"],
+      "tips": [
+        "Focus on his extremely rapid speech pattern",
+        "Pay attention to the higher pitch and precise articulation",
+        "Note how he emphasizes key words like 'facts' and 'objective'"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "jordan-peterson",
+  "name": "Jordan Peterson",
+  "title": "Host of The Jordan B. Peterson Podcast",
+  "summary": "Jordan Peterson speaks with a distinctive cadence characterized by thoughtful pauses, precise word choice, and emotional emphasis on key concepts, often diving deep into complex psychological ideas.",
+  "bio": "Jordan B. Peterson is a Canadian clinical psychologist, author, and professor emeritus at the University of Toronto. He hosts The Jordan B. Peterson Podcast where he discusses psychology, philosophy, religion, and cultural issues with various guests.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Deliberate, measured pace with thoughtful pauses",
+    "Distinctive Canadian accent",
+    "Emotional intensity that builds during key points",
+    "Precise, academic vocabulary with frequent throat clearing"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "On Responsibility",
+      "description": "Thoughts on personal responsibility and meaning",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "The purpose of life is finding the largest burden that you can bear and bearing it. If you're not capable of terrible things, then you're not capable of anything because terrible things are required. You must be able to tell the truth, especially when it's difficult.",
+      "tags": ["psychology", "philosophy"],
+      "tips": [
+        "Focus on his distinctive throat-clearing and breathiness",
+        "Pay attention to how his emotional intensity builds",
+        "Note the precise word choice and elongated pronunciation of certain words",
+        "Practice the thoughtful, measured pauses between phrases"
+      ]
+    }
+  ]
+} 

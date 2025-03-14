@@ -1,0 +1,36 @@
+{
+  "id": "theo-von",
+  "name": "Theo Von",
+  "title": "Host of This Past Weekend",
+  "summary": "Theo Von speaks with a distinctive Southern Louisiana drawl, colorful metaphors, unexpected phrasing, and a unique storytelling cadence that blends humor with poignant observation.",
+  "bio": "Theo Von is an American stand-up comedian, actor, and television host. He hosts the podcast This Past Weekend, where he shares personal stories and interviews guests with his signature Southern charm and offbeat humor.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Strong Southern Louisiana accent",
+    "Unique rhythmic cadence with unexpected pauses",
+    "Colorful, original metaphors and phrases",
+    "Blend of humor and melancholy in tone"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Dark Arts",
+      "description": "Unique storytelling about growing up in Louisiana",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Back in Louisiana, we had this neighbor who was into the dark arts, bruh. Not like witchcraft, the man just refused to use electricity. He was like a human possum, you'd only see him at night, rustling through the trash of life, looking for the remnants of joy.",
+      "tags": ["comedy", "storytelling"],
+      "tips": [
+        "Focus on the distinctive Southern Louisiana pronunciation of words like 'bruh'",
+        "Pay attention to the unexpected rhythm and pauses in his speech pattern",
+        "Practice his unique metaphors and delivery of punchlines",
+        "Note how he blends humor with melancholy in his tone"
+      ]
+    }
+  ]
+} 

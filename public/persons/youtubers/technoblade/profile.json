@@ -1,0 +1,36 @@
+{
+  "id": "technoblade",
+  "name": "Technoblade",
+  "title": "Minecraft Legend",
+  "summary": "Technoblade spoke with a distinctive deadpan delivery, dry humor, and calm, monotone voice that remained unflappable even during intense gaming moments, punctuated by strategic pauses and subtle sarcasm.",
+  "bio": "Alex (1999-2022), known online as Technoblade, was an American Minecraft YouTuber and streamer renowned for his exceptional skill in PvP combat, dry wit, and strategic gameplay. His legacy lives on through his content and the impact he had on the Minecraft community before his passing from cancer in 2022.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Calm, monotone delivery with minimal emotional fluctuation",
+    "Dry humor with deadpan timing and delivery",
+    "Strategic pauses before punchlines or revelations",
+    "Subtle yet distinctive laugh when something amuses him"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "PvP Commentary",
+      "description": "Typical commentary during competitive Minecraft play",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "So as I was saying, the second-worst thing to ever happen to those orphans... their parents dying being the first. Anyway, we need to break their bed defense. These guys have no idea what's about to hit them. I'm about to destroy their whole career. Technoblade never dies.",
+      "tags": ["gaming", "minecraft"],
+      "tips": [
+        "Maintain his signature monotone delivery regardless of content",
+        "Focus on the perfect deadpan timing he uses before delivering jokes",
+        "Practice the subtle inflections he uses to emphasize certain words",
+        "Pay attention to his calm demeanor even when describing chaotic gameplay"
+      ]
+    }
+  ]
+} 

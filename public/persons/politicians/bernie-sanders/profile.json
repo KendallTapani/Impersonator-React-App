@@ -1,0 +1,36 @@
+{
+  "id": "bernie-sanders",
+  "name": "Bernie Sanders",
+  "title": "U.S. Senator from Vermont",
+  "summary": "Bernie Sanders is known for his passionate, Brooklyn-accented delivery, emphatic hand gestures, and direct, no-nonsense speaking style when addressing economic and social issues.",
+  "bio": "Bernard Sanders is an American politician and activist who has served as the junior United States senator from Vermont since 2007. He was the U.S. representative for the state's at-large congressional district from 1991 to 2007. He is the longest-serving independent in U.S. congressional history.",
+  "images": {
+    "profile": "profile.png",
+    "banner": "banner.png"
+  },
+  "voiceCharacteristics": [
+    "Distinctive Brooklyn accent",
+    "Passionate, emphatic delivery",
+    "Rising volume on key points",
+    "Characteristic pronunciation of certain words"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Economic Inequality",
+      "description": "Speech on wealth inequality in America",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "The issue of wealth and income inequality is the great moral issue of our time, it is the great economic issue of our time, and it is the great political issue of our time.",
+      "tags": ["economics", "inequality"],
+      "tips": [
+        "Pay special attention to his Brooklyn accent on words like 'moral' and 'political'",
+        "Notice how he emphasizes words by stretching them out",
+        "Focus on his passionate, rising delivery when making key points"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "ishowspeed",
+  "name": "IShowSpeed",
+  "title": "Energetic Streamer and Creator",
+  "summary": "IShowSpeed speaks with intense, unpredictable energy characterized by sudden screams, rapid-fire delivery, and dramatic voice modulations that range from normal conversation to extreme emotional outbursts.",
+  "bio": "Darren Watkins Jr., known online as IShowSpeed or simply Speed, is an American YouTuber and streamer who gained massive popularity for his gaming content, particularly FIFA and NBA 2K, as well as his extremely energetic and often chaotic reactions. His unpredictable personality and explosive style have made him one of the fastest-growing creators on the platform.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Unpredictable vocal intensity with sudden screams",
+    "Rapid shifts between calm speech and explosive reactions",
+    "High-pitched voice that cracks during emotional moments",
+    "Distinctive laugh and catchphrases delivered with extreme energy"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Gaming Reaction",
+      "description": "Typical reaction during an intense gaming moment",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "COME ON! COME ON! OH MY GOD! SUIIIIIII! WHAT AM I SEEING BRO?! ARE YOU SERIOUS RIGHT NOW?! [intense scream] NO WAY! NO WAY! That's what I'm talking about! SPEED THE GOAT! SPEED THE GOAT!",
+      "tags": ["gaming", "reactions"],
+      "tips": [
+        "Practice the extreme volume changes from normal speaking to screaming",
+        "Focus on his distinctive high-pitched voice that often cracks during excitement",
+        "Pay attention to how he rapidly accelerates his speech during intense moments",
+        "Master his characteristic screams that often sound like they're pushing his vocal cords to the limit"
+      ]
+    }
+  ]
+} 

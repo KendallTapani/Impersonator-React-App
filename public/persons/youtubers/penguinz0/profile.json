@@ -1,0 +1,36 @@
+{
+  "id": "penguinz0",
+  "name": "penguinz0 (Charlie)",
+  "title": "Commentary and Gaming Creator",
+  "summary": "Charlie speaks with a distinctive monotone delivery, deadpan humor, unusually creative analogies, and frequent use of colorful language while maintaining the same calm vocal level regardless of content.",
+  "bio": "Charles White Jr., known online as penguinz0, Cr1TiKaL, or simply Charlie, is an American YouTube commentator, Twitch streamer, and actor. Known for his deadpan humor, monotone voice, and varied content ranging from commentary to gaming, he has built a dedicated following for his authentic, unfiltered style.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinctive monotone delivery regardless of content",
+    "Deadpan humor without vocal inflection",
+    "Low-pitched, slightly gravelly voice",
+    "Rapid, articulate delivery of complex analogies"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Ridiculous Product Review",
+      "description": "Typical review of an absurd product with creative analogies",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "This has to be the most pathetic product I've ever seen. It's about as useful as a chocolate teapot in the Sahara Desert. The design is so bad it looks like it was created by a toddler who was given nothing but crayons and emotional damage. That's about it, see ya.",
+      "tags": ["commentary", "humor"],
+      "tips": [
+        "Maintain the same monotone delivery regardless of how absurd the content is",
+        "Focus on his deadpan delivery with minimal pitch variation",
+        "Practice his rapid-fire yet clearly articulated speech pattern",
+        "Pay attention to how he delivers creative analogies without changing his tone"
+      ]
+    }
+  ]
+} 
