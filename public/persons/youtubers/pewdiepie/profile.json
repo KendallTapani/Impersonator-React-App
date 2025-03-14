@@ -1,0 +1,36 @@
+{
+  "id": "pewdiepie",
+  "name": "PewDiePie",
+  "title": "Gaming and Commentary Creator",
+  "summary": "PewDiePie speaks with a distinctive Swedish accent, frequent loud exclamations, musical cadence, and characteristic phrases like 'How's it going, bros?' and playful voice modulations.",
+  "bio": "Felix Kjellberg, known as PewDiePie, is a Swedish YouTube creator who rose to fame through his gaming commentary videos. His content has evolved to include comedy sketches, meme reviews, and commentary on internet culture, making him one of the most-subscribed individual creators on the platform.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Distinct Swedish accent that varies in intensity",
+    "Frequent loud exclamations and sudden shifts in volume",
+    "Melodic, sing-song cadence with exaggerated pitch changes",
+    "Characteristic catch phrases with unique delivery"
+  ],
+  "difficulty": "hard",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Meme Review",
+      "description": "Typical intro and reaction to internet content",
+      "difficulty": "hard",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "How's it going, bros? My name is PewwwwDiePie! *clap* *clap* Meme Review! Today we're looking at some absolutely hilarious - and completely ridiculous - memes that you guys have been sending me. Let's jump right into it!",
+      "tags": ["gaming", "comedy"],
+      "tips": [
+        "Focus on his unique pronunciation of his own name with extended syllables",
+        "Practice the sudden shifts from normal speaking voice to excited exclamations",
+        "Pay attention to his characteristic Swedish accent on certain words",
+        "Master his melodic, almost sing-song delivery of catchphrases"
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,36 @@
+{
+  "id": "linus-tech-tips",
+  "name": "Linus Sebastian",
+  "title": "Tech Reviewer and Creator",
+  "summary": "Linus speaks with rapid-fire delivery, distinct Canadian accent, and a unique cadence that alternates between casual conversational tone and excited technical explanations, often ending sentences with higher pitch.",
+  "bio": "Linus Sebastian is a Canadian tech YouTuber and entrepreneur, best known as the creator and host of Linus Tech Tips, one of the largest technology channels on YouTube. Known for his in-depth hardware reviews, PC builds, and tech news coverage, Linus has built a media empire with multiple channels and a passionate tech-enthusiast audience.",
+  "images": {
+    "profile": "profile.jpg"
+  },
+  "voiceCharacteristics": [
+    "Rapid, sometimes breathless delivery of technical information",
+    "Canadian accent with distinctive pronunciation patterns",
+    "Rising intonation at the end of sentences",
+    "Seamless transitions between technical jargon and casual speech"
+  ],
+  "difficulty": "medium",
+  "samples": [
+    {
+      "id": "sample1",
+      "title": "Tech Review Introduction",
+      "description": "Typical intro to a product review with sponsor segment",
+      "difficulty": "medium",
+      "duration": 15,
+      "audioFile": "sample1.wav",
+      "transcriptFile": "sample1.csv",
+      "fullText": "Speaking of high performance, this video is sponsored by GlassWire! Monitor your network activity and block suspicious connections with a single click. Is this the fastest CPU we've EVER tested? Well, its 16 cores and boost clock of 5.7 GHz certainly make it a contender, but let's find out after we tear it down and put it through our benchmark suite.",
+      "tags": ["tech", "reviews"],
+      "tips": [
+        "Focus on his rapid-fire delivery that barely pauses for breath",
+        "Practice his distinctive rising intonation at the end of phrases",
+        "Pay attention to how he emphasizes technical specifications",
+        "Notice his seamless transitions between sponsor segments and content"
+      ]
+    }
+  ]
+} 

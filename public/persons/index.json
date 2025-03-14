@@ -1,0 +1,346 @@
+{
+  "categories": [
+    {
+      "id": "politicians",
+      "name": "Politicians",
+      "description": "Practice imitating the voices of notable political figures from around the world",
+      "people": [
+        {
+          "id": "donald-trump",
+          "name": "Donald Trump",
+          "title": "45th President of the United States",
+          "featuredImage": "/persons/politicians/donald-trump/banner.png",
+          "sampleCount": 10,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "jd-vance",
+          "name": "JD Vance",
+          "title": "U.S. Senator from Ohio",
+          "featuredImage": "/persons/politicians/jd-vance/banner.png",
+          "sampleCount": 1,
+          "difficulty": "easy",
+          "popular": false
+        },
+        {
+          "id": "vivek-ramaswamy",
+          "name": "Vivek Ramaswamy",
+          "title": "Entrepreneur and Political Commentator",
+          "featuredImage": "/persons/politicians/vivek-ramaswamy/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": false
+        },
+        {
+          "id": "ron-desantis",
+          "name": "Ron DeSantis",
+          "title": "Governor of Florida",
+          "featuredImage": "/persons/politicians/ron-desantis/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "barack-obama",
+          "name": "Barack Obama",
+          "title": "44th President of the United States",
+          "featuredImage": "/persons/politicians/barack-obama/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "hillary-clinton",
+          "name": "Hillary Clinton",
+          "title": "Former Secretary of State",
+          "featuredImage": "/persons/politicians/hillary-clinton/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "bernie-sanders",
+          "name": "Bernie Sanders",
+          "title": "U.S. Senator from Vermont",
+          "featuredImage": "/persons/politicians/bernie-sanders/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "joe-biden",
+          "name": "Joe Biden",
+          "title": "46th President of the United States",
+          "featuredImage": "/persons/politicians/joe-biden/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "kamala-harris",
+          "name": "Kamala Harris",
+          "title": "Vice President of the United States",
+          "featuredImage": "/persons/politicians/kamala-harris/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "elizabeth-warren",
+          "name": "Elizabeth Warren",
+          "title": "U.S. Senator from Massachusetts",
+          "featuredImage": "/persons/politicians/elizabeth-warren/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": false
+        },
+        {
+          "id": "nancy-pelosi",
+          "name": "Nancy Pelosi",
+          "title": "Former Speaker of the House",
+          "featuredImage": "/persons/politicians/nancy-pelosi/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": false
+        },
+        {
+          "id": "alexandria-ocasio-cortez",
+          "name": "Alexandria Ocasio-Cortez",
+          "title": "U.S. Representative from New York",
+          "featuredImage": "/persons/politicians/alexandria-ocasio-cortez/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        }
+      ]
+    },
+    {
+      "id": "podcasters",
+      "name": "Podcasters",
+      "description": "Master the vocal styles of popular podcast hosts",
+      "people": [
+        {
+          "id": "ben-shapiro",
+          "name": "Ben Shapiro",
+          "title": "Host of The Ben Shapiro Show",
+          "featuredImage": "/persons/podcasters/ben-shapiro/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "jordan-peterson",
+          "name": "Jordan Peterson",
+          "title": "Host of The Jordan B. Peterson Podcast",
+          "featuredImage": "/persons/podcasters/jordan-peterson/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "joe-rogan",
+          "name": "Joe Rogan",
+          "title": "Host of The Joe Rogan Experience",
+          "featuredImage": "/persons/podcasters/joe-rogan/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "lex-fridman",
+          "name": "Lex Fridman",
+          "title": "Host of Lex Fridman Podcast",
+          "featuredImage": "/persons/podcasters/lex-fridman/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "theo-von",
+          "name": "Theo Von",
+          "title": "Host of This Past Weekend",
+          "featuredImage": "/persons/podcasters/theo-von/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "dave-ramsey",
+          "name": "Dave Ramsey",
+          "title": "Host of The Ramsey Show",
+          "featuredImage": "/persons/podcasters/dave-ramsey/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "andrew-huberman",
+          "name": "Andrew Huberman",
+          "title": "Host of Huberman Lab Podcast",
+          "featuredImage": "/persons/podcasters/andrew-huberman/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "tucker-carlsen",
+          "name": "Tucker Carlson",
+          "title": "Former Host of Tucker Carlson Tonight",
+          "featuredImage": "/persons/podcasters/tucker-carlsen/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "rush-limbaugh",
+          "name": "Rush Limbaugh",
+          "title": "Former Host of The Rush Limbaugh Show",
+          "featuredImage": "/persons/podcasters/rush-limbaugh/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        }
+      ]
+    },
+    {
+      "id": "youtubers",
+      "name": "YouTubers",
+      "description": "Learn to mimic the distinctive styles of famous content creators",
+      "people": [
+        {
+          "id": "mr-beast",
+          "name": "MrBeast",
+          "title": "Philanthropic Content Creator",
+          "featuredImage": "/persons/youtubers/mr-beast/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "pewdiepie",
+          "name": "PewDiePie",
+          "title": "Gaming and Commentary Creator",
+          "featuredImage": "/persons/youtubers/pewdiepie/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "markiplier",
+          "name": "Markiplier",
+          "title": "Gaming and Narrative Content Creator",
+          "featuredImage": "/persons/youtubers/markiplier/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "jacksepticeye",
+          "name": "Jacksepticeye",
+          "title": "Energetic Gaming Creator",
+          "featuredImage": "/persons/youtubers/jacksepticeye/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "mark-rober",
+          "name": "Mark Rober",
+          "title": "Science and Engineering Creator",
+          "featuredImage": "/persons/youtubers/mark-rober/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "logan-paul",
+          "name": "Logan Paul",
+          "title": "Content Creator and Entrepreneur",
+          "featuredImage": "/persons/youtubers/logan-paul/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "andrew-tate",
+          "name": "Andrew Tate",
+          "title": "Controversial Internet Personality",
+          "featuredImage": "/persons/youtubers/andrew-tate/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "penguinz0",
+          "name": "penguinz0 (Charlie)",
+          "title": "Commentary and Gaming Creator",
+          "featuredImage": "/persons/youtubers/penguinz0/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "lazarbeam",
+          "name": "Lazarbeam",
+          "title": "Gaming and Comedy Content Creator",
+          "featuredImage": "/persons/youtubers/lazarbeam/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "linus-tech-tips",
+          "name": "Linus Sebastian",
+          "title": "Tech Reviewer and Creator",
+          "featuredImage": "/persons/youtubers/linus-tech-tips/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "technoblade",
+          "name": "Technoblade",
+          "title": "Minecraft Legend",
+          "featuredImage": "/persons/youtubers/technoblade/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "casually-explained",
+          "name": "Casually Explained",
+          "title": "Educational Comedy Creator",
+          "featuredImage": "/persons/youtubers/casually-explained/banner.png",
+          "sampleCount": 1,
+          "difficulty": "medium",
+          "popular": true
+        },
+        {
+          "id": "kai-cenat",
+          "name": "Kai Cenat",
+          "title": "Streamer and Content Creator",
+          "featuredImage": "/persons/youtubers/kai-cenat/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        },
+        {
+          "id": "ishowspeed",
+          "name": "IShowSpeed",
+          "title": "Energetic Streamer and Creator",
+          "featuredImage": "/persons/youtubers/ishowspeed/banner.png",
+          "sampleCount": 1,
+          "difficulty": "hard",
+          "popular": true
+        }
+      ]
+    },
+    {
+      "id": "celebrities",
+      "name": "Celebrities",
+      "description": "Imitate the voices of movie stars, musicians, and other celebrities",
+      "people": []
+    }
+  ]
+} 
