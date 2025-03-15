@@ -116,6 +116,33 @@ If you encounter issues:
 3. Check for CORS issues by inspecting the browser console
 4. Test webhook delivery in Stripe dashboard
 
+### MIME Type Errors
+
+If you encounter errors like:
+
+```
+Failed to load module script: Expected a JavaScript module script but the server responded with a MIME type of "text/html". Strict MIME type checking is enforced for module scripts per HTML spec.
+```
+
+This is a common issue with Vite + Vercel deployments. Solutions:
+
+1. **Ensure your `vercel.json` has the correct route configuration**:
+   - The file should include proper routing for static assets
+   - Make sure to include `{ "handle": "filesystem" }` in your routes
+
+2. **Clear the Vercel build cache**:
+   - In the Vercel dashboard, go to your project settings
+   - Find "Build & Development Settings"
+   - Click "Clear Build Cache" and redeploy
+
+3. **Verify production build**:
+   - Run `npm run build` locally to ensure the build succeeds without errors
+   - Check the `dist` directory to make sure files are generated correctly
+
+4. **Update import paths**:
+   - If specific modules are failing, check their import paths
+   - Ensure all imports use relative paths correctly
+
 ## Local Development After Migration
 
 To run the application locally with the serverless functions:

@@ -8,6 +8,7 @@
     "dev:api": "vercel dev",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "build": "tsc && vite build",
+    "vercel-build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
