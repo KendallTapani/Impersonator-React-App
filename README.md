@@ -55,126 +55,60 @@ export default tseslint.config({
 
 # Impersonator React App
 
-A voice impersonation training application with Clerk authentication and subscription management.
+A React application with Clerk authentication and Stripe subscription integration.
 
-## Setup and Installation
+## Features
+
+- User authentication with Clerk
+- Subscription management with Stripe
+- Protected routes based on subscription status
+- Serverless API using Vercel Functions
+
+## Getting Started
 
 ### Prerequisites
-- Node.js (v16+)
-- npm
+
+- Node.js 18+
+- npm or yarn
+- Clerk account with API keys
+- Stripe account with API keys
 
 ### Installation
 
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   cd Impersonator-React-App
-   ```
-
+1. Clone the repository
 2. Install dependencies:
-   ```
-   npm install
-   cd backend && npm install && cd ..
-   ```
 
-3. Set up environment variables:
-   - Create a `.env` file in the root directory:
-     ```
-     VITE_CLERK_PUBLISHABLE_KEY=pk_test_cG9zaXRpdmUtY29uZG9yLTQ0LmNsZXJrLmFjY291bnRzLmRldiQ
-     ```
-   - Verify that `backend/.env` contains:
-     ```
-     CLERK_SECRET_KEY=sk_test_1eI85DeCcQHZJUeXkxlRlfyfIMBurR0gAJv0hqDL5g
-     PORT=3001
-     ```
+```bash
+npm install
+```
 
-## Running the Application
-
-### Option 1: Start Backend and Frontend Together
-
-To run both the backend and frontend servers with a single command:
+3. Create a `.env` file in the root directory with the following variables:
 
 ```
+CLERK_SECRET_KEY=your_clerk_secret_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PRICE_ID=your_stripe_price_id
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+```
+
+### Development
+
+Run the development server:
+
+```bash
 npm run dev:full
 ```
 
-This will start:
-- Backend server on http://localhost:3001
-- Frontend development server on http://localhost:5173
+This will start both the Vite development server and Vercel's local development server.
 
-### Option 2: Run with Connection Check
+## Deployment
 
-For a safer startup with backend connection verification:
-
-```
-npm run start:safe
-```
-
-### Option 3: Run Servers Separately
-
-To run the servers individually:
-
-1. Start the backend:
-   ```
-   cd backend
-   npm run dev
-   ```
-
-2. In a separate terminal, start the frontend:
-   ```
-   npm run dev
-   ```
-
-## Testing Backend Connectivity
-
-To test if the backend is running and accessible:
-
-```
-npm run test-connection
-```
-
-To test all API endpoints directly:
-
-```
-npm run test-api
-```
+This application is configured to be deployed to Vercel. See the [Vercel Deployment Guide](./VERCEL_DEPLOYMENT.md) for detailed instructions.
 
 ## Troubleshooting
 
-### 404 Errors When Accessing API
-
-If you see 404 errors in the console:
-
-1. Make sure the backend server is running on port 3001
-2. Check that all endpoints in the backend have the correct `/api` prefix
-3. Verify that the Vite proxy settings in `vite.config.ts` are correctly set up
-4. Try restarting both the frontend and backend servers
-
-### CORS Issues
-
-If you encounter CORS errors:
-
-1. Check the CORS configuration in `backend/server.js`
-2. Make sure the allowed origins include both `http://localhost:5173` and `http://127.0.0.1:5173`
-3. Verify that the API requests include the proper headers and credentials
-
-## Application Features
-
-- User authentication with Clerk
-- Mock subscription system (preparing for Stripe integration)
-- Voice impersonation training tools
-- Profile management
-
-## Routes
-
-- `/` - Home page
-- `/sign-in` - Sign in page
-- `/sign-up` - Sign up page
-- `/subscription` - Subscription page (requires authentication)
-- `/dashboard` - User dashboard (requires subscription)
-- `/training` - Training page (requires subscription)
-- `/person/:personId` - Individual personality page (requires subscription)
+See the "Troubleshooting" section in the [Vercel Deployment Guide](./VERCEL_DEPLOYMENT.md).
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the MIT License - see the LICENSE file for details.
