@@ -31,19 +31,64 @@ export function Home() {
     const checkBackendHealth = async () => {
       try {
         // Check health endpoint
+        console.log('Checking backend health...');
         const healthResponse = await fetch('/api/health');
+        
+        // Log raw response for debugging
+        const healthResponseText = await healthResponse.text();
+        console.log('Raw health response:', healthResponseText);
+        
+        // Try to parse the response as JSON
+        let healthData;
+        try {
+          healthData = JSON.parse(healthResponseText);
+          console.log('Health data:', healthData);
+        } catch (parseError) {
+          console.error('Failed to parse health response as JSON:', parseError);
+          setBackendStatus('error');
+          return;
+        }
+
         if (!healthResponse.ok) {
           setBackendStatus('error');
-          console.error('Backend health check failed:', healthResponse.status);
+          console.error('Backend health check failed:', healthResponse.status, healthData);
           return;
         }
 
         // Also check the test endpoint
+        console.log('Checking backend test endpoint...');
         const testResponse = await fetch('/api/test');
+        
+        // Log raw response for debugging
+        const testResponseText = await testResponse.text();
+        console.log('Raw test response:', testResponseText);
+        
+        // Try to parse the response as JSON
+        let testData;
+        try {
+          testData = JSON.parse(testResponseText);
+          console.log('Test data:', testData);
+        } catch (parseError) {
+          console.error('Failed to parse test response as JSON:', parseError);
+          setBackendStatus('error');
+          return;
+        }
+        
         if (!testResponse.ok) {
           setBackendStatus('error');
-          console.error('Backend API test failed:', testResponse.status);
+          console.error('Backend API test failed:', testResponse.status, testData);
           return;
+        }
+
+        // Try the diagnostic endpoint
+        try {
+          console.log('Checking diagnostic endpoint...');
+          const diagResponse = await fetch('/api/debug');
+          const diagData = await diagResponse.json();
+          console.log('Diagnostic data:', diagData);
+        } catch (diagError) {
+          console.warn('Diagnostic endpoint check failed:', diagError);
+          // Continue anyway, this is just for debugging
         }
 
         // If both checks pass, set status to connected
@@ -51,7 +96,6 @@ export function Home() {
         console.log('Backend connection successful');
         
         // Log the test response
-        const testData = await testResponse.json();
         console.log('Backend API test response:', testData);
       } catch (err) {
         setBackendStatus('error');

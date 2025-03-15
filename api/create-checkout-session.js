@@ -12,23 +12,48 @@ const log = {
 
 // Create Stripe checkout session
 export default async function handler(req, res) {
+  // Log request details for debugging
+  log.debug('Received checkout request', {
+    method: req.method,
+    url: req.url,
+    headers: {
+      'content-type': req.headers['content-type'],
+      origin: req.headers.origin,
+      host: req.headers.host
+    }
+  });
+
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   // Handle OPTIONS request for preflight
   if (req.method === 'OPTIONS') {
+    log.debug('Responding to OPTIONS preflight request');
     return res.status(200).end();
   }
   
   // Only allow POST method
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    log.error(`Method not allowed: ${req.method}`);
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      message: `This endpoint only accepts POST requests, received: ${req.method}`,
+      allowedMethods: ['POST', 'OPTIONS']
+    });
   }
 
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+    
+    if (!process.env.STRIPE_PRICE_ID) {
+      throw new Error('STRIPE_PRICE_ID is not configured');
+    }
+    
     const { userId } = req.body;
     
     if (!userId) {
